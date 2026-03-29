@@ -66,6 +66,7 @@ The agent reads the following instruction files when a configuration is needed:
 
 **Instruction file**: `instructions/database.md`
 **Required by**: Every module — must be set up in Phase 1
+**Needed by**: Pages 1-8 (all analyzed pages) — Task 1.2
 
 ```
 Provider:        [ ] PostgreSQL  [ ] MySQL  [ ] Other: ________
@@ -97,6 +98,7 @@ Notes: _______________
 
 **Instruction file**: `instructions/cache.md`
 **Required by**: Public read endpoints, stats, settings, blog/case study lists
+**Needed by**: Pages 3, 6 (blog/CS public lists), JWT blacklist (Page 1) — Task 1.3, 3.2, 4.2
 
 ```
 Provider:   [ ] Redis  [ ] Memcached  [ ] Not used (mark ⛔)
@@ -143,6 +145,7 @@ Notes: _______________
 
 **Instruction file**: `instructions/email.md`
 **Required by**: Consultation form, contact form, async job completion, notifications
+**Needed by**: Pages 9-14 (pending specs — consultation + contact forms) — Task 5.1
 
 ```
 Provider:   [ ] Gmail SMTP
@@ -232,6 +235,7 @@ Notes: _______________
 
 **Instruction file**: `instructions/backend.md` (Security section)
 **Required by**: All admin endpoints, authentication
+**Needed by**: Pages 1-8 (all admin pages require JWT) — Task 1.3
 
 ```
 Auth mechanism:   [ ] JWT (stateless)  [ ] Session-based  [ ] Other: ________
@@ -282,6 +286,7 @@ Notes: _______________
 
 **Instruction file**: N/A — see CLAUDE.md for project-specific details
 **Required by**: Image uploads (blog cover, case study architecture diagram, team photos)
+**Needed by**: Pages 5, 8 (blog hero/gallery, CS architecture diagram) — Task 1.4
 
 ```
 Provider:   [ ] AWS S3
@@ -681,22 +686,22 @@ Phase 5: File Storage → API Docs
 The agent reads this table at the start of every session to know
 what is available and what is missing:
 
-| # | Configuration | Status | Set Up In Task |
-|---|---|---|---|
-| 1 | Database | ❌ MISSING | — |
-| 2 | Cache | ❌ MISSING | — |
-| 3 | Email | ❌ MISSING | — |
-| 4 | Async | ❌ MISSING | — |
-| 5 | Security / JWT | ❌ MISSING | — |
-| 6 | File Storage | ❌ MISSING | — |
-| 7 | API Docs | ❌ MISSING | — |
-| 8 | Rate Limiting | ❌ MISSING | — |
-| 9 | CORS | ❌ MISSING | — |
-| 10 | Docker / Local | ❌ MISSING | — |
-| 11 | SMS | ❌ MISSING | — |
-| 12 | Notifications (Push) | ❌ MISSING | — |
-| 13 | WhatsApp | ❌ MISSING | — |
-| 14 | WebSocket / SSE | ❌ MISSING | — |
+| # | Configuration | Status | Needed By | Set Up In Task |
+|---|---|---|---|---|
+| 1 | Database | ❌ MISSING | All pages | Task 1.2 |
+| 2 | Cache (Redis) | ❌ MISSING | Pages 1,3,6 (JWT + public lists) | Task 1.3 |
+| 3 | Email | ❌ MISSING | Pages 9-14 (pending specs) | Task 5.1 |
+| 4 | Async | ❌ MISSING | Email, exports | Task 5.1 |
+| 5 | Security / JWT | ❌ MISSING | All admin pages (1-8) | Task 1.3 |
+| 6 | File Storage (S3) | ❌ MISSING | Pages 5, 8 (image uploads) | Task 1.4 |
+| 7 | API Docs (Swagger) | ❌ MISSING | All endpoints | Task 1.3 |
+| 8 | Rate Limiting | ❌ MISSING | Page 1 (login), future forms | Task 1.3 |
+| 9 | CORS | ❌ MISSING | All API calls | Task 1.3 |
+| 10 | Docker / Local | ❌ MISSING | Local dev | Task 1.1 |
+| 11 | SMS | ⛔ NOT USED | — | — |
+| 12 | Notifications (Push) | ⛔ NOT USED | — | — |
+| 13 | WhatsApp | ❌ MISSING | Public pages (static link) | Future |
+| 14 | WebSocket / SSE | ⛔ NOT USED | — | — |
 
-**Last updated**: [never — update after each configuration task]
-**Updated by**: [agent task ID]
+**Last updated**: 29/03/2026 at 12:00
+**Updated by**: /analyze-designs

@@ -127,40 +127,22 @@ Each module maps to a SpecKit spec in `specs/<module>/`.
 > 3. The agent reads every `[N].png` + `[N].md`, extracts requirements,
      >    and writes the phase plan here
 
-**Status**: ⏳ Pending design analysis
+**Status**: ✅ Analysis complete — ready to execute
 
-| Phase | Scope | Platforms | Priority |
-|---|---|---|---|
-| — | Generated after design analysis | — | — |
+| Phase | Scope | Platforms | Tasks | Priority |
+|---|---|---|---|---|
+| Phase 1 | Foundation — scaffold, auth, DB, S3, layout | Backend + Frontend | 6 | Must |
+| Phase 2 | Dashboard module | Backend + Frontend | 2 | Must |
+| Phase 3 | Blog module (list, editor, insights) | Backend + Frontend | 6 | Must |
+| Phase 4 | Case Study module (list, editor, insights) | Backend + Frontend | 6 | Must |
+| Phase 5 | Integration — async/email config, route wiring | Backend + Frontend | 2 | Must |
 
-**Total tasks:** TBD after analysis
-**Total estimated cost:** $20.00 budget
+**Total tasks**: 22
+**Total estimated cost**: $18.80 of $20.00 budget
+**Buffer**: $1.20
 
----
-
-### How Phases Are Generated
-
-After the agent analyzes all design images, it groups tasks into phases:
-
-```
-Phase 1 — Always Foundation
-  → Project scaffold, DB setup, Docker Compose
-  → Security, JWT auth, CORS config
-  → Base entity, ApiResponse, GlobalExceptionHandler
-
-Phase 2 to N — One Phase Per Module
-  → Backend task before Frontend task in same module
-  → Modules ordered by dependency
-    (auth before everything, upload before image-heavy content)
-
-Final Phase — Integration
-  → Navigation wiring across all pages
-  → Regression tests
-  → Performance and SEO review
-```
-
-The agent fills in the table above and updates the Current Status section
-at the bottom of this file once analysis is complete.
+**Note**: Pages 9-14 have empty .md specs. Once filled, additional phases will be added
+for: Global Stats, Testimonials, Users, Settings, Consultation, Contact modules.
 
 ---
 
@@ -397,20 +379,21 @@ doc/DATABASE_AUDIT.md            → curl smoke test DB verification
 
 ## Current Status
 
-**Project Phase**: ⏳ Design analysis not yet run
+**Project Phase**: ✅ Ready to execute
 
-> Phases and task count are populated after the agent analyzes all design images.
-> Run: `Analyze all designs and generate project phases`
-
-| Phase | Status | Tasks | Cost |
+| Phase | Status | Tasks | Est. Cost |
 |---|---|---|---|
-| — | Generated after design analysis | — | — |
+| Phase 1 — Foundation | ⏳ Pending | 6 | $4.80 |
+| Phase 2 — Dashboard | ⏳ Pending | 2 | $1.60 |
+| Phase 3 — Blog | ⏳ Pending | 6 | $5.60 |
+| Phase 4 — Case Study | ⏳ Pending | 6 | $5.80 |
+| Phase 5 — Integration | ⏳ Pending | 2 | $1.00 |
 
 **Progress:**
 ```
-Designs added:     0 / [total pages]
-Designs analyzed:  0 / [total pages]
-Tasks generated:   0
+Designs added:     14 / 14
+Designs analyzed:  8 / 14 (6 specs pending)
+Tasks generated:   22
 Tasks completed:   0
 Cost spent:        $0.00 / $20.00
 ```
