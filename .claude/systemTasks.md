@@ -11,6 +11,7 @@
 
 ### Task 1.1: Project Scaffold + Docker Compose
 - **Status**: ⏳ Pending
+- **Actual cost**: —
 - **Platform**: Backend + Frontend
 - **Dependencies**: none
 - **Complexity**: Medium
@@ -26,6 +27,7 @@
 
 ### Task 1.2: Database + Flyway + Core Entities
 - **Status**: ⏳ Pending
+- **Actual cost**: —
 - **Platform**: Backend
 - **Dependencies**: 1.1
 - **Complexity**: Medium
@@ -41,6 +43,7 @@
 
 ### Task 1.3: Security Config + JWT Auth
 - **Status**: ⏳ Pending
+- **Actual cost**: —
 - **Platform**: Backend
 - **Dependencies**: 1.2
 - **Complexity**: Complex
@@ -68,6 +71,7 @@
 
 ### Task 1.4: File Upload Service (S3)
 - **Status**: ⏳ Pending
+- **Actual cost**: —
 - **Platform**: Backend
 - **Dependencies**: 1.3
 - **Complexity**: Medium
@@ -84,6 +88,7 @@
 
 ### Task 1.5: Auth Frontend — Login Page + AuthGuard
 - **Status**: ⏳ Pending
+- **Actual cost**: —
 - **Platform**: Frontend
 - **Dependencies**: 1.3
 - **Complexity**: Medium
@@ -104,6 +109,7 @@
 
 ### Task 1.6: Admin Layout Shell (Frontend)
 - **Status**: ⏳ Pending
+- **Actual cost**: —
 - **Platform**: Frontend
 - **Dependencies**: 1.5
 - **Complexity**: Medium
@@ -125,6 +131,7 @@
 
 ### Task 2.1: Dashboard Backend
 - **Status**: ⏳ Pending
+- **Actual cost**: —
 - **Platform**: Backend
 - **Dependencies**: 1.3
 - **Complexity**: Medium
@@ -147,6 +154,7 @@
 
 ### Task 2.2: Dashboard Frontend
 - **Status**: ⏳ Pending
+- **Actual cost**: —
 - **Platform**: Frontend
 - **Dependencies**: 1.6, 2.1
 - **Complexity**: Medium
@@ -170,6 +178,7 @@
 
 ### Task 3.1: Blog Backend — Entities + Admin CRUD
 - **Status**: ⏳ Pending
+- **Actual cost**: —
 - **Platform**: Backend
 - **Dependencies**: 1.3, 1.4
 - **Complexity**: Complex
@@ -201,6 +210,7 @@
 
 ### Task 3.2: Blog Backend — Public Read Endpoints
 - **Status**: ⏳ Pending
+- **Actual cost**: —
 - **Platform**: Backend
 - **Dependencies**: 3.1
 - **Complexity**: Simple
@@ -218,6 +228,7 @@
 
 ### Task 3.3: Blog Frontend — Blog List Page
 - **Status**: ⏳ Pending
+- **Actual cost**: —
 - **Platform**: Frontend
 - **Dependencies**: 1.6, 3.1
 - **Complexity**: Complex
@@ -239,6 +250,7 @@
 
 ### Task 3.4: Blog Frontend — Blog Editor Page
 - **Status**: ⏳ Pending
+- **Actual cost**: —
 - **Platform**: Frontend
 - **Dependencies**: 3.3
 - **Complexity**: Complex
@@ -259,6 +271,7 @@
 
 ### Task 3.5: Blog Insights Backend
 - **Status**: ⏳ Pending
+- **Actual cost**: —
 - **Platform**: Backend
 - **Dependencies**: 3.1
 - **Complexity**: Medium
@@ -280,6 +293,7 @@
 
 ### Task 3.6: Blog Insights Frontend
 - **Status**: ⏳ Pending
+- **Actual cost**: —
 - **Platform**: Frontend
 - **Dependencies**: 3.3, 3.5
 - **Complexity**: Complex
@@ -301,6 +315,7 @@
 
 ### Task 4.1: Case Study Backend — Entities + Admin CRUD
 - **Status**: ⏳ Pending
+- **Actual cost**: —
 - **Platform**: Backend
 - **Dependencies**: 1.3, 1.4
 - **Complexity**: Complex
@@ -336,6 +351,7 @@
 
 ### Task 4.2: Case Study Backend — Public Read Endpoints
 - **Status**: ⏳ Pending
+- **Actual cost**: —
 - **Platform**: Backend
 - **Dependencies**: 4.1
 - **Complexity**: Simple
@@ -353,6 +369,7 @@
 
 ### Task 4.3: Case Study Frontend — List Page
 - **Status**: ⏳ Pending
+- **Actual cost**: —
 - **Platform**: Frontend
 - **Dependencies**: 1.6, 4.1
 - **Complexity**: Complex
@@ -372,6 +389,7 @@
 
 ### Task 4.4: Case Study Frontend — Editor Page
 - **Status**: ⏳ Pending
+- **Actual cost**: —
 - **Platform**: Frontend
 - **Dependencies**: 4.3
 - **Complexity**: Complex
@@ -388,6 +406,7 @@
 
 ### Task 4.5: Case Study Insights Backend
 - **Status**: ⏳ Pending
+- **Actual cost**: —
 - **Platform**: Backend
 - **Dependencies**: 4.1, 3.5
 - **Complexity**: Complex
@@ -411,6 +430,7 @@
 
 ### Task 4.6: Case Study Insights Frontend
 - **Status**: ⏳ Pending
+- **Actual cost**: —
 - **Platform**: Frontend
 - **Dependencies**: 4.3, 4.5
 - **Complexity**: Complex
@@ -433,6 +453,7 @@
 
 ### Task 5.1: Async + Email Config
 - **Status**: ⏳ Pending
+- **Actual cost**: —
 - **Platform**: Backend
 - **Dependencies**: 1.2
 - **Complexity**: Medium
@@ -448,6 +469,7 @@
 
 ### Task 5.2: Navigation Wiring + Route Setup + Smoke Test
 - **Status**: ⏳ Pending
+- **Actual cost**: —
 - **Platform**: Frontend
 - **Dependencies**: 2.2, 3.3, 3.4, 3.6, 4.3, 4.4, 4.6
 - **Complexity**: Simple

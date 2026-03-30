@@ -141,7 +141,7 @@ Notes: _______________
 
 ## 3. Email Configuration
 
-**Status**: ❌ MISSING
+**Status**: ✅ READY
 
 **Instruction file**: `instructions/email.md`
 **Required by**: Consultation form, contact form, async job completion, notifications
@@ -197,7 +197,7 @@ Notes: _______________
 
 ## 4. Async Configuration
 
-**Status**: ❌ MISSING
+**Status**: ✅ READY
 
 **Instruction file**: `instructions/async.md`
 **Required by**: Email sending, file exports, long-running jobs, scheduled tasks
@@ -690,8 +690,8 @@ what is available and what is missing:
 |---|---|---|---|---|
 | 1 | Database | ❌ MISSING | All pages | Task 1.2 |
 | 2 | Cache (Redis) | ❌ MISSING | Pages 1,3,6 (JWT + public lists) | Task 1.3 |
-| 3 | Email | ❌ MISSING | Pages 9-14 (pending specs) | Task 5.1 |
-| 4 | Async | ❌ MISSING | Email, exports | Task 5.1 |
+| 3 | Email | ✅ READY | Pages 9-14 (pending specs) | Task 5.1 |
+| 4 | Async | ✅ READY | Email, exports | Task 5.1 |
 | 5 | Security / JWT | ❌ MISSING | All admin pages (1-8) | Task 1.3 |
 | 6 | File Storage (S3) | ❌ MISSING | Pages 5, 8 (image uploads) | Task 1.4 |
 | 7 | API Docs (Swagger) | ❌ MISSING | All endpoints | Task 1.3 |

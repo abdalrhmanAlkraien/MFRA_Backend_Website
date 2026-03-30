@@ -6,6 +6,28 @@
 
 ---
 
+## The Non-Negotiable Rule
+
+**Write the Java test files FIRST. Run `mvn verify` SECOND.**
+
+An empty `src/test/` package means the task was never tested.
+Before running `mvn clean verify`, the following files must exist
+and contain test methods:
+
+```
+src/test/java/com/<pkg>/<module>/
+├── <Module>ServiceTest.java      ← minimum 8 unit test methods
+└── <Module>ControllerTest.java   ← minimum 15 integration test methods
+```
+
+The agent must write these files explicitly. Skipping this step and running
+`mvn verify` on an empty test package produces a 0-test build that shows
+`BUILD SUCCESS` — which is a false positive. No tests ran.
+
+Verify before running: `ls src/test/java/com/<pkg>/<module>/`
+
+---
+
 ## Testing Stack
 
 - **Unit Tests**: JUnit 5 + Mockito
@@ -29,26 +51,41 @@
    specs/<module>/spec.md        ← acceptance criteria
    specs/<module>/tasks.md       ← task breakdown and scope
          ↓
-4. Write Unit Tests (Service layer)
+4. Write <Module>ServiceTest.java        ← unit tests — DO THIS NOW
+   src/test/java/com/<pkg>/<module>/
          ↓
-5. Write Integration Tests (Controller layer)
+5. Write <Module>ControllerTest.java     ← integration tests — DO THIS NOW
+   src/test/java/com/<pkg>/<module>/
          ↓
-6. Run All Tests
+6. Verify test files exist and are not empty
+   ls src/test/java/com/<pkg>/<module>/
+   → Must show: <Module>ServiceTest.java + <Module>ControllerTest.java
+   → If empty → write them now before continuing
+         ↓
+7. Run All Tests
    mvn clean verify
          ↓
-7. Check Coverage
+8. Check Coverage
    mvn jacoco:report → minimum 80%
          ↓
-8. Run curl Smoke Tests against live server
+9. Run curl Smoke Tests against live server
          ↓
-9. Cross-check every response against DB
-   Write results to doc/DATABASE_AUDIT.md
+10. Cross-check every response against DB
+    Write results to doc/DATABASE_AUDIT.md
          ↓
-10. All pass?
-   YES → Mark ✅ COMPLETED in systemTasks.md
-    NO → Fix → Re-run → Repeat until all pass
+11. Write results into test plan file
+    .claude/tests/Task X.Y - Backend Test Plan.md
+    → Update each TC row with ✅ PASS or ❌ FAIL
+    → Paste build output
+    → Update Final Status
+         ↓
+12. All pass?
+    YES → Mark ✅ COMPLETED in systemTasks.md
+     NO → Fix → Re-run → Repeat until all pass
 ```
 
+**The test package being empty = the task was not tested = the task is NOT complete.**
+**Write the Java test files (steps 4–5) before running mvn verify (step 7).**
 **Tasks cannot be marked complete without all tests passing — no exceptions.**
 
 ---
@@ -127,15 +164,15 @@ public abstract class BaseIntegrationTest {
     // ─── Containers ──────────────────────────────────────────────
     @Container
     static PostgreSQLContainer<?> postgres =
-            new PostgreSQLContainer<>("postgres:15-alpine")
-                    .withDatabaseName("testdb")
-                    .withUsername("test")
-                    .withPassword("test");
+        new PostgreSQLContainer<>("postgres:15-alpine")
+            .withDatabaseName("testdb")
+            .withUsername("test")
+            .withPassword("test");
 
     @Container
     static GenericContainer<?> redis =
-            new GenericContainer<>("redis:7-alpine")
-                    .withExposedPorts(6379);
+        new GenericContainer<>("redis:7-alpine")
+            .withExposedPorts(6379);
 
     @DynamicPropertySource
     static void overrideProperties(DynamicPropertyRegistry registry) {
@@ -177,45 +214,45 @@ public abstract class BaseIntegrationTest {
     // ─── Request Helpers ─────────────────────────────────────────
     protected MockHttpServletRequestBuilder adminGet(String url) {
         return MockMvcRequestBuilders.get(url)
-                .header("Authorization", adminToken())
-                .contentType(MediaType.APPLICATION_JSON);
+            .header("Authorization", adminToken())
+            .contentType(MediaType.APPLICATION_JSON);
     }
 
     protected MockHttpServletRequestBuilder adminPost(String url, Object body) throws Exception {
         return MockMvcRequestBuilders.post(url)
-                .header("Authorization", adminToken())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(toJson(body));
+            .header("Authorization", adminToken())
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(toJson(body));
     }
 
     protected MockHttpServletRequestBuilder adminPut(String url, Object body) throws Exception {
         return MockMvcRequestBuilders.put(url)
-                .header("Authorization", adminToken())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(toJson(body));
+            .header("Authorization", adminToken())
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(toJson(body));
     }
 
     protected MockHttpServletRequestBuilder adminPatch(String url) {
         return MockMvcRequestBuilders.patch(url)
-                .header("Authorization", adminToken())
-                .contentType(MediaType.APPLICATION_JSON);
+            .header("Authorization", adminToken())
+            .contentType(MediaType.APPLICATION_JSON);
     }
 
     protected MockHttpServletRequestBuilder adminDelete(String url) {
         return MockMvcRequestBuilders.delete(url)
-                .header("Authorization", adminToken())
-                .contentType(MediaType.APPLICATION_JSON);
+            .header("Authorization", adminToken())
+            .contentType(MediaType.APPLICATION_JSON);
     }
 
     protected MockHttpServletRequestBuilder publicGet(String url) {
         return MockMvcRequestBuilders.get(url)
-                .contentType(MediaType.APPLICATION_JSON);
+            .contentType(MediaType.APPLICATION_JSON);
     }
 
     protected MockHttpServletRequestBuilder publicPost(String url, Object body) throws Exception {
         return MockMvcRequestBuilders.post(url)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(toJson(body));
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(toJson(body));
     }
 }
 ```
@@ -234,12 +271,12 @@ public class TestDataFactory {
     // ─── Blog ─────────────────────────────────────────────────────
     public BlogCreateRequest validBlogRequest() {
         return BlogCreateRequest.builder()
-                .title("AWS Migration Best Practices")
-                .summary("A comprehensive guide to migrating to AWS")
-                .content("## Introduction\n\nMigrating to AWS requires careful planning...")
-                .categoryId(UUID.randomUUID())
-                .tagIds(List.of())
-                .build();
+            .title("AWS Migration Best Practices")
+            .summary("A comprehensive guide to migrating to AWS")
+            .content("## Introduction\n\nMigrating to AWS requires careful planning...")
+            .categoryId(UUID.randomUUID())
+            .tagIds(List.of())
+            .build();
     }
 
     public BlogCreateRequest blogRequestWithTitle(String title) {
@@ -251,43 +288,43 @@ public class TestDataFactory {
     // ─── Case Study ───────────────────────────────────────────────
     public CaseStudyCreateRequest validCaseStudyRequest() {
         return CaseStudyCreateRequest.builder()
-                .title("Zero Downtime Migration for Saudi Fintech")
-                .industry("Financial Services")
-                .companySize("51-200")
-                .location("Saudi Arabia")
-                .projectDuration("3 Months")
-                .challenge("Legacy on-premise infrastructure causing scalability issues")
-                .approach("Phased migration using AWS 6 R's framework")
-                .solution("Full migration to AWS ECS + RDS + CloudWatch")
-                .categoryId(UUID.randomUUID())
-                .build();
+            .title("Zero Downtime Migration for Saudi Fintech")
+            .industry("Financial Services")
+            .companySize("51-200")
+            .location("Saudi Arabia")
+            .projectDuration("3 Months")
+            .challenge("Legacy on-premise infrastructure causing scalability issues")
+            .approach("Phased migration using AWS 6 R's framework")
+            .solution("Full migration to AWS ECS + RDS + CloudWatch")
+            .categoryId(UUID.randomUUID())
+            .build();
     }
 
     // ─── Consultation ────────────────────────────────────────────
     public ConsultationCreateRequest validConsultationRequest() {
         return ConsultationCreateRequest.builder()
-                .fullName("Ahmed Al-Rashid")
-                .jobTitle("CTO")
-                .companyName("TechCorp KSA")
-                .workEmail("ahmed@techcorp.com")
-                .phone("+966501234567")
-                .country("Saudi Arabia")
-                .companySize("51-200")
-                .currentInfrastructure("On-Premise")
-                .servicesInterested(List.of("Cloud Migration", "AWS Infrastructure"))
-                .projectTimeline("1-3 months")
-                .challengeDescription("We need to migrate our legacy Oracle DB to AWS RDS")
-                .build();
+            .fullName("Ahmed Al-Rashid")
+            .jobTitle("CTO")
+            .companyName("TechCorp KSA")
+            .workEmail("ahmed@techcorp.com")
+            .phone("+966501234567")
+            .country("Saudi Arabia")
+            .companySize("51-200")
+            .currentInfrastructure("On-Premise")
+            .servicesInterested(List.of("Cloud Migration", "AWS Infrastructure"))
+            .projectTimeline("1-3 months")
+            .challengeDescription("We need to migrate our legacy Oracle DB to AWS RDS")
+            .build();
     }
 
     // ─── Contact ─────────────────────────────────────────────────
     public ContactCreateRequest validContactRequest() {
         return ContactCreateRequest.builder()
-                .fullName("Sara Al-Ahmad")
-                .email("sara@company.com")
-                .subject("Partnership Inquiry")
-                .message("We are interested in learning more about your AWS migration services.")
-                .build();
+            .fullName("Sara Al-Ahmad")
+            .email("sara@company.com")
+            .subject("Partnership Inquiry")
+            .message("We are interested in learning more about your AWS migration services.")
+            .build();
     }
 }
 ```
@@ -345,9 +382,9 @@ class BlogServiceTest {
         assertThat(result).isNotNull();
         assertThat(result.getSlug()).isEqualTo("aws-migration-best-practices");
         verify(blogRepository).save(argThat(entity ->
-                entity.getSlug().equals("aws-migration-best-practices") &&
-                        entity.getStatus() == BlogStatus.DRAFT &&
-                        entity.getReadingTimeMins() == 2
+            entity.getSlug().equals("aws-migration-best-practices") &&
+            entity.getStatus() == BlogStatus.DRAFT &&
+            entity.getReadingTimeMins() == 2
         ));
     }
 
@@ -359,11 +396,11 @@ class BlogServiceTest {
         request.setTitle("AWS Migration Best Practices");
 
         when(blogRepository.existsBySlugAndDeletedAtIsNull("aws-migration-best-practices"))
-                .thenReturn(true);
+            .thenReturn(true);
 
         // Act + Assert
         assertThatThrownBy(() -> blogService.create(request))
-                .isInstanceOf(SlugAlreadyExistsException.class);
+            .isInstanceOf(SlugAlreadyExistsException.class);
 
         verify(blogRepository, never()).save(any());
     }
@@ -385,10 +422,10 @@ class BlogServiceTest {
         blogService.create(request);
 
         verify(blogRepository).save(argThat(entity ->
-                entity.getSlug().matches("[a-z0-9-]+") &&
-                        !entity.getSlug().contains("&") &&
-                        !entity.getSlug().contains("(") &&
-                        !entity.getSlug().contains(")")
+            entity.getSlug().matches("[a-z0-9-]+") &&
+            !entity.getSlug().contains("&") &&
+            !entity.getSlug().contains("(") &&
+            !entity.getSlug().contains(")")
         ));
     }
 
@@ -397,10 +434,10 @@ class BlogServiceTest {
     @ParameterizedTest
     @DisplayName("create() — reading time calculated correctly from word count")
     @CsvSource({
-            "200, 1",   // 200 words = 1 min
-            "400, 2",   // 400 words = 2 min
-            "1000, 5",  // 1000 words = 5 min
-            "50, 1",    // less than 200 words = 1 min minimum
+        "200, 1",   // 200 words = 1 min
+        "400, 2",   // 400 words = 2 min
+        "1000, 5",  // 1000 words = 5 min
+        "50, 1",    // less than 200 words = 1 min minimum
     })
     void create_readingTimeCalculatedCorrectly(int wordCount, int expectedMinutes) {
         String content = "word ".repeat(wordCount);
@@ -416,7 +453,7 @@ class BlogServiceTest {
         blogService.create(request);
 
         verify(blogRepository).save(argThat(entity ->
-                entity.getReadingTimeMins() == expectedMinutes
+            entity.getReadingTimeMins() == expectedMinutes
         ));
     }
 
@@ -431,12 +468,12 @@ class BlogServiceTest {
         entity.setDeletedAt(null);
 
         when(blogRepository.findByIdAndDeletedAtIsNull(id))
-                .thenReturn(Optional.of(entity));
+            .thenReturn(Optional.of(entity));
 
         blogService.delete(id);
 
         verify(blogRepository).save(argThat(saved ->
-                saved.getDeletedAt() != null   // soft delete applied
+            saved.getDeletedAt() != null   // soft delete applied
         ));
         verify(blogRepository, never()).delete(any()); // hard delete NEVER called
     }
@@ -448,7 +485,7 @@ class BlogServiceTest {
         when(blogRepository.findByIdAndDeletedAtIsNull(id)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> blogService.delete(id))
-                .isInstanceOf(ResourceNotFoundException.class);
+            .isInstanceOf(ResourceNotFoundException.class);
     }
 
     // ─── PUBLISH ──────────────────────────────────────────────────
@@ -469,8 +506,8 @@ class BlogServiceTest {
         blogService.publish(id);
 
         verify(blogRepository).save(argThat(saved ->
-                saved.getStatus() == BlogStatus.PUBLISHED &&
-                        saved.getPublishedAt() != null
+            saved.getStatus() == BlogStatus.PUBLISHED &&
+            saved.getPublishedAt() != null
         ));
     }
 
@@ -529,13 +566,13 @@ class BlogControllerTest extends BaseIntegrationTest {
         request.setCategoryId(categoryId);
 
         mockMvc.perform(adminPost("/api/admin/blogs", request))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.title").value(request.getTitle()))
-                .andExpect(jsonPath("$.data.slug").isNotEmpty())
-                .andExpect(jsonPath("$.data.status").value("DRAFT"))
-                .andExpect(jsonPath("$.data.readingTimeMins").isNumber())
-                .andExpect(jsonPath("$.data.id").isNotEmpty());
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.success").value(true))
+            .andExpect(jsonPath("$.data.title").value(request.getTitle()))
+            .andExpect(jsonPath("$.data.slug").isNotEmpty())
+            .andExpect(jsonPath("$.data.status").value("DRAFT"))
+            .andExpect(jsonPath("$.data.readingTimeMins").isNumber())
+            .andExpect(jsonPath("$.data.id").isNotEmpty());
 
         // Verify persisted to DB
         Optional<BlogEntity> saved = blogRepository.findBySlugAndDeletedAtIsNull("aws-migration-best-practices");
@@ -547,9 +584,9 @@ class BlogControllerTest extends BaseIntegrationTest {
     @DisplayName("POST /api/admin/blogs — 401 — no token returns unauthorized")
     void createBlog_noToken_returns401() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.post("/api/admin/blogs")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(toJson(factory.validBlogRequest())))
-                .andExpect(status().isUnauthorized());
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(toJson(factory.validBlogRequest())))
+            .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -559,20 +596,20 @@ class BlogControllerTest extends BaseIntegrationTest {
         request.setTitle("");
 
         mockMvc.perform(adminPost("/api/admin/blogs", request))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"))
-                .andExpect(jsonPath("$.error.fields.title").isNotEmpty());
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.success").value(false))
+            .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"))
+            .andExpect(jsonPath("$.error.fields.title").isNotEmpty());
     }
 
     @Test
     @DisplayName("POST /api/admin/blogs — 400 — all required fields missing")
     void createBlog_emptyBody_returns400WithAllFieldErrors() throws Exception {
         mockMvc.perform(adminPost("/api/admin/blogs", new BlogCreateRequest()))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error.fields.title").isNotEmpty())
-                .andExpect(jsonPath("$.error.fields.content").isNotEmpty())
-                .andExpect(jsonPath("$.error.fields.summary").isNotEmpty());
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.error.fields.title").isNotEmpty())
+            .andExpect(jsonPath("$.error.fields.content").isNotEmpty())
+            .andExpect(jsonPath("$.error.fields.summary").isNotEmpty());
     }
 
     @Test
@@ -583,12 +620,12 @@ class BlogControllerTest extends BaseIntegrationTest {
 
         // First create
         mockMvc.perform(adminPost("/api/admin/blogs", request))
-                .andExpect(status().isCreated());
+            .andExpect(status().isCreated());
 
         // Second create with same title → same slug → conflict
         mockMvc.perform(adminPost("/api/admin/blogs", request))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.error.code").value("SLUG_ALREADY_EXISTS"));
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.error.code").value("SLUG_ALREADY_EXISTS"));
     }
 
     // ─── GET LIST ─────────────────────────────────────────────────
@@ -604,18 +641,18 @@ class BlogControllerTest extends BaseIntegrationTest {
         }
 
         mockMvc.perform(adminGet("/api/admin/blogs?page=0&size=10"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data").isArray())
-                .andExpect(jsonPath("$.totalElements").value(greaterThanOrEqualTo(3)))
-                .andExpect(jsonPath("$.page").value(0));
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.success").value(true))
+            .andExpect(jsonPath("$.data").isArray())
+            .andExpect(jsonPath("$.totalElements").value(greaterThanOrEqualTo(3)))
+            .andExpect(jsonPath("$.page").value(0));
     }
 
     @Test
     @DisplayName("GET /api/admin/blogs — 401 — no token returns unauthorized")
     void listBlogs_noToken_returns401() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.get("/api/admin/blogs"))
-                .andExpect(status().isUnauthorized());
+            .andExpect(status().isUnauthorized());
     }
 
     // ─── GET BY ID ────────────────────────────────────────────────
@@ -627,24 +664,24 @@ class BlogControllerTest extends BaseIntegrationTest {
         request.setCategoryId(categoryId);
 
         String createResponse = mockMvc.perform(adminPost("/api/admin/blogs", request))
-                .andExpect(status().isCreated())
-                .andReturn().getResponse().getContentAsString();
+            .andExpect(status().isCreated())
+            .andReturn().getResponse().getContentAsString();
 
         String id = objectMapper.readTree(createResponse).path("data").path("id").asText();
 
         mockMvc.perform(adminGet("/api/admin/blogs/" + id))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.id").value(id))
-                .andExpect(jsonPath("$.data.title").value(request.getTitle()));
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.id").value(id))
+            .andExpect(jsonPath("$.data.title").value(request.getTitle()));
     }
 
     @Test
     @DisplayName("GET /api/admin/blogs/{id} — 404 — unknown id returns not found")
     void getBlogById_unknownId_returns404() throws Exception {
         mockMvc.perform(adminGet("/api/admin/blogs/" + UUID.randomUUID()))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.error.code").value("RESOURCE_NOT_FOUND"));
+            .andExpect(status().isNotFound())
+            .andExpect(jsonPath("$.success").value(false))
+            .andExpect(jsonPath("$.error.code").value("RESOURCE_NOT_FOUND"));
     }
 
     // ─── UPDATE ───────────────────────────────────────────────────
@@ -657,7 +694,7 @@ class BlogControllerTest extends BaseIntegrationTest {
         createReq.setCategoryId(categoryId);
 
         String createResponse = mockMvc.perform(adminPost("/api/admin/blogs", createReq))
-                .andReturn().getResponse().getContentAsString();
+            .andReturn().getResponse().getContentAsString();
         String id = objectMapper.readTree(createResponse).path("data").path("id").asText();
 
         // Update
@@ -666,8 +703,8 @@ class BlogControllerTest extends BaseIntegrationTest {
         updateReq.setSummary("Updated summary");
 
         mockMvc.perform(adminPut("/api/admin/blogs/" + id, updateReq))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.title").value("Updated AWS Migration Guide"));
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.title").value("Updated AWS Migration Guide"));
     }
 
     // ─── PUBLISH ──────────────────────────────────────────────────
@@ -679,13 +716,13 @@ class BlogControllerTest extends BaseIntegrationTest {
         request.setCategoryId(categoryId);
 
         String createResponse = mockMvc.perform(adminPost("/api/admin/blogs", request))
-                .andReturn().getResponse().getContentAsString();
+            .andReturn().getResponse().getContentAsString();
         String id = objectMapper.readTree(createResponse).path("data").path("id").asText();
 
         mockMvc.perform(adminPatch("/api/admin/blogs/" + id + "/publish"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.status").value("PUBLISHED"))
-                .andExpect(jsonPath("$.data.publishedAt").isNotEmpty());
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.status").value("PUBLISHED"))
+            .andExpect(jsonPath("$.data.publishedAt").isNotEmpty());
 
         // Verify DB state
         BlogEntity entity = blogRepository.findById(UUID.fromString(id)).orElseThrow();
@@ -702,11 +739,11 @@ class BlogControllerTest extends BaseIntegrationTest {
         request.setCategoryId(categoryId);
 
         String createResponse = mockMvc.perform(adminPost("/api/admin/blogs", request))
-                .andReturn().getResponse().getContentAsString();
+            .andReturn().getResponse().getContentAsString();
         String id = objectMapper.readTree(createResponse).path("data").path("id").asText();
 
         mockMvc.perform(adminDelete("/api/admin/blogs/" + id))
-                .andExpect(status().isOk());
+            .andExpect(status().isOk());
 
         // Verify soft delete — deletedAt is set, record still in DB
         BlogEntity entity = blogRepository.findById(UUID.fromString(id)).orElseThrow();
@@ -714,7 +751,7 @@ class BlogControllerTest extends BaseIntegrationTest {
 
         // Verify not returned in list anymore
         mockMvc.perform(adminGet("/api/admin/blogs"))
-                .andExpect(jsonPath("$.data[?(@.id == '" + id + "')]").doesNotExist());
+            .andExpect(jsonPath("$.data[?(@.id == '" + id + "')]").doesNotExist());
     }
 
     @Test
@@ -724,7 +761,7 @@ class BlogControllerTest extends BaseIntegrationTest {
         request.setCategoryId(categoryId);
 
         String createResponse = mockMvc.perform(adminPost("/api/admin/blogs", request))
-                .andReturn().getResponse().getContentAsString();
+            .andReturn().getResponse().getContentAsString();
         String id = objectMapper.readTree(createResponse).path("data").path("id").asText();
 
         // Delete once
@@ -732,7 +769,7 @@ class BlogControllerTest extends BaseIntegrationTest {
 
         // Delete again → 404
         mockMvc.perform(adminDelete("/api/admin/blogs/" + id))
-                .andExpect(status().isNotFound());
+            .andExpect(status().isNotFound());
     }
 
     // ─── PUBLIC API ───────────────────────────────────────────────
@@ -744,7 +781,7 @@ class BlogControllerTest extends BaseIntegrationTest {
         BlogCreateRequest pubReq = factory.blogRequestWithTitle("Published Blog");
         pubReq.setCategoryId(categoryId);
         String pubResponse = mockMvc.perform(adminPost("/api/admin/blogs", pubReq))
-                .andReturn().getResponse().getContentAsString();
+            .andReturn().getResponse().getContentAsString();
         String pubId = objectMapper.readTree(pubResponse).path("data").path("id").asText();
         mockMvc.perform(adminPatch("/api/admin/blogs/" + pubId + "/publish"));
 
@@ -755,10 +792,10 @@ class BlogControllerTest extends BaseIntegrationTest {
 
         // Public API — only published returned
         mockMvc.perform(publicGet("/api/public/blogs"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data[*].title", hasItem("Published Blog")))
-                .andExpect(jsonPath("$.data[*].title", not(hasItem("Draft Blog"))))
-                .andExpect(jsonPath("$.data[*].status", everyItem(is("PUBLISHED"))));
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data[*].title", hasItem("Published Blog")))
+            .andExpect(jsonPath("$.data[*].title", not(hasItem("Draft Blog"))))
+            .andExpect(jsonPath("$.data[*].status", everyItem(is("PUBLISHED"))));
     }
 
     @Test
@@ -768,14 +805,14 @@ class BlogControllerTest extends BaseIntegrationTest {
         request.setCategoryId(categoryId);
 
         String createResponse = mockMvc.perform(adminPost("/api/admin/blogs", request))
-                .andReturn().getResponse().getContentAsString();
+            .andReturn().getResponse().getContentAsString();
         String id = objectMapper.readTree(createResponse).path("data").path("id").asText();
         mockMvc.perform(adminPatch("/api/admin/blogs/" + id + "/publish"));
 
         mockMvc.perform(publicGet("/api/public/blogs/aws-best-practices"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.slug").value("aws-best-practices"))
-                .andExpect(jsonPath("$.data.status").value("PUBLISHED"));
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.slug").value("aws-best-practices"))
+            .andExpect(jsonPath("$.data.status").value("PUBLISHED"));
     }
 
     @Test
@@ -787,7 +824,7 @@ class BlogControllerTest extends BaseIntegrationTest {
 
         // Draft blog should NOT be accessible via public API
         mockMvc.perform(publicGet("/api/public/blogs/draft-hidden-blog"))
-                .andExpect(status().isNotFound());
+            .andExpect(status().isNotFound());
     }
 
     // ─── RATE LIMITING ────────────────────────────────────────────
@@ -800,13 +837,13 @@ class BlogControllerTest extends BaseIntegrationTest {
         // 3 allowed per hour
         for (int i = 0; i < 3; i++) {
             mockMvc.perform(publicPost("/api/public/consultation", request))
-                    .andExpect(status().isCreated());
+                .andExpect(status().isCreated());
         }
 
         // 4th exceeds limit
         mockMvc.perform(publicPost("/api/public/consultation", request))
-                .andExpect(status().isTooManyRequests())
-                .andExpect(jsonPath("$.error.code").value("RATE_LIMIT_EXCEEDED"));
+            .andExpect(status().isTooManyRequests())
+            .andExpect(jsonPath("$.error.code").value("RATE_LIMIT_EXCEEDED"));
     }
 }
 ```
@@ -864,17 +901,17 @@ PUBLISH / STATUS CHANGE:
 @DisplayName("Security — no token — 401")
 void endpoint_noToken_returns401() throws Exception {
     mockMvc.perform(MockMvcRequestBuilders.get("/api/admin/blogs")
-                    .contentType(MediaType.APPLICATION_JSON))
-            .andExpect(status().isUnauthorized());
+            .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isUnauthorized());
 }
 
 @Test
 @DisplayName("Security — invalid token — 401")
 void endpoint_invalidToken_returns401() throws Exception {
     mockMvc.perform(MockMvcRequestBuilders.get("/api/admin/blogs")
-                    .header("Authorization", "Bearer invalid.token.here")
-                    .contentType(MediaType.APPLICATION_JSON))
-            .andExpect(status().isUnauthorized());
+            .header("Authorization", "Bearer invalid.token.here")
+            .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isUnauthorized());
 }
 
 @Test
@@ -882,15 +919,15 @@ void endpoint_invalidToken_returns401() throws Exception {
 void endpoint_expiredToken_returns401() throws Exception {
     String expiredToken = "Bearer " + generateExpiredToken();
     mockMvc.perform(MockMvcRequestBuilders.get("/api/admin/blogs")
-                    .header("Authorization", expiredToken))
-            .andExpect(status().isUnauthorized());
+            .header("Authorization", expiredToken))
+        .andExpect(status().isUnauthorized());
 }
 
 @Test
 @DisplayName("Security — public endpoint — no auth required — 200")
 void publicEndpoint_noToken_returns200() throws Exception {
     mockMvc.perform(publicGet("/api/public/blogs"))
-            .andExpect(status().isOk());
+        .andExpect(status().isOk());
 }
 ```
 
@@ -902,23 +939,23 @@ void publicEndpoint_noToken_returns200() throws Exception {
 @DisplayName("Response structure — success response matches ApiResponse<T> format")
 void response_successFormat_matchesApiResponseStructure() throws Exception {
     mockMvc.perform(publicGet("/api/public/blogs"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.success").value(true))
-            .andExpect(jsonPath("$.data").exists())
-            .andExpect(jsonPath("$.timestamp").isNotEmpty())
-            .andExpect(jsonPath("$.error").doesNotExist());
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.success").value(true))
+        .andExpect(jsonPath("$.data").exists())
+        .andExpect(jsonPath("$.timestamp").isNotEmpty())
+        .andExpect(jsonPath("$.error").doesNotExist());
 }
 
 @Test
 @DisplayName("Response structure — error response matches ApiResponse<T> format")
 void response_errorFormat_matchesApiResponseStructure() throws Exception {
     mockMvc.perform(adminGet("/api/admin/blogs/" + UUID.randomUUID()))
-            .andExpect(status().isNotFound())
-            .andExpect(jsonPath("$.success").value(false))
-            .andExpect(jsonPath("$.data").doesNotExist())
-            .andExpect(jsonPath("$.error.code").isNotEmpty())
-            .andExpect(jsonPath("$.error.message").isNotEmpty())
-            .andExpect(jsonPath("$.timestamp").isNotEmpty());
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.success").value(false))
+        .andExpect(jsonPath("$.data").doesNotExist())
+        .andExpect(jsonPath("$.error.code").isNotEmpty())
+        .andExpect(jsonPath("$.error.message").isNotEmpty())
+        .andExpect(jsonPath("$.timestamp").isNotEmpty());
 }
 ```
 
@@ -930,7 +967,7 @@ void response_errorFormat_matchesApiResponseStructure() throws Exception {
 void softDelete_deletedAtSetRecordStillInDb() throws Exception {
     // Create
     String createResponse = mockMvc.perform(adminPost("/api/admin/blogs", factory.validBlogRequest()))
-            .andReturn().getResponse().getContentAsString();
+        .andReturn().getResponse().getContentAsString();
     String id = objectMapper.readTree(createResponse).path("data").path("id").asText();
 
     // Delete
@@ -942,7 +979,7 @@ void softDelete_deletedAtSetRecordStillInDb() throws Exception {
 
     // API: not visible anymore
     mockMvc.perform(adminGet("/api/admin/blogs/" + id))
-            .andExpect(status().isNotFound());             // ✅ hidden from API
+        .andExpect(status().isNotFound());             // ✅ hidden from API
 }
 ```
 

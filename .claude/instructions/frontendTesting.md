@@ -8,40 +8,86 @@
 
 ## Testing Stack
 
-- **E2E Testing**: Playwright
-- **Unit Testing**: Vitest + React Testing Library
-- **Test Runner**: Playwright CLI (via Claude Code / OpenClaw)
-- **Browser**: Chromium (default), Firefox (regression)
-- **Screenshots**: Captured automatically on every scenario
+- **E2E Testing**: Playwright — the ONLY frontend testing tool
+- **Build Check**: `npm run build` — must pass before any Playwright run
+- **Browser**: Chromium (default)
+- **Screenshots**: Captured after EVERY scenario — mandatory
 
 ---
 
-## Testing Workflow
+## The Non-Negotiable Rule
+
+**Generate the test plan file FIRST. Execute tests SECOND. Write results THIRD.**
+
+The test plan file must exist BEFORE Playwright runs a single scenario.
+If Playwright cannot run (server won't start, build fails), the test plan
+file must still be created and updated with the failure reason.
+
+A task with no test plan file = a task that cannot be reviewed or audited.
+It will always be treated as incomplete.
+
+---
+
+## Test Plan File Location and Naming
 
 ```
-1. Complete Task Implementation
-         ↓
-2. Read Current Task from systemTasks.md
-   → identify module name and task ID
-         ↓
-3. Read Module Spec from SpecKit
-   specs/<module>/spec.md        ← acceptance criteria
-   specs/<module>/tasks.md       ← task breakdown and scope
-         ↓
-4. Generate Test Scenarios
-   .claude/Tests/<module>/Task X.Y.md
-         ↓
-5. Execute All Scenarios with Playwright
-         ↓
-6. Record Results
-   .claude/processed/Task X.Y - Test Results.md
-         ↓
-7. All Pass?
-   YES → Mark ✅ COMPLETED in systemTasks.md
-    NO → Fix issues → Re-test → Repeat until all pass
+.claude/tests/Task X.Y - Frontend Test Plan.md
 ```
 
-**Tasks cannot be marked complete without all tests passing — no exceptions.**
+This file serves as both the test plan AND the test results — results are
+written back into the same file after execution.
+
+---
+
+## Mandatory Testing Workflow
+
+```
+Step 1 — Read context
+  Read: specs/<module>/spec.md        ← acceptance criteria → scenarios
+  Read: designs/[N]-requirements.md   ← page-specific rules → edge cases
+  Read: .claude/systemTasks.md        ← current task ID
+
+Step 2 — Write the Playwright spec file
+  Create: tests/e2e/<module>/<page-name>.spec.ts
+  Fill in: all test cases — TC-F-01 through TC-F-NN
+  DO NOT run Playwright yet
+
+  Verify the file exists before continuing:
+  ls tests/e2e/<module>/
+  → Must show: <page-name>.spec.ts with content
+  → If empty or missing → write it now before continuing
+
+Step 3 — Generate test plan file (documentation)
+  Create: .claude/tests/Task X.Y - Frontend Test Plan.md
+  This documents the same scenarios as the spec file
+  Status at top: ⏳ NOT EXECUTED
+
+Step 4 — Build check
+  Run: npm run build
+  If build fails → write failure into plan file → fix → rebuild
+  Do not run Playwright until build is clean: 0 TypeScript errors
+
+Step 5 — Start servers
+  Run: npm run dev  (frontend at localhost:5173)
+  Confirm: backend running at localhost:8080
+
+Step 6 — Run Playwright
+  npx playwright test tests/e2e/<module>/<page-name>.spec.ts
+  Or: npx playwright test (run all spec files for this task)
+  Each test captures a screenshot automatically
+
+Step 7 — Write results back into plan file
+  For each scenario row in the plan file:
+    → Fill in: ✅ PASS or ❌ FAIL
+    → Fill in: screenshot filename
+    → Fill in: any error message if failed
+  Update Final Status section at top
+  Update systemTasks.md — exactly once
+```
+
+**An empty `tests/e2e/` directory = no tests were written = task is NOT complete.**
+**Write the .spec.ts file (Step 2) before running Playwright (Step 6).**
+**Tasks cannot be marked complete without all scenarios passing — no exceptions.**
 
 ---
 
@@ -72,9 +118,12 @@ specs/blog/tasks.md     ← read what this specific task covers
 |---|---|---|---|
 | SpecKit Spec | `specs/<module>/` | `spec.md` | `specs/blog/spec.md` |
 | SpecKit Tasks | `specs/<module>/` | `tasks.md` | `specs/blog/tasks.md` |
-| Test Scenarios | `.claude/Tests/<module>/` | `Task X.Y.md` | `Task 7.1.md` |
-| Test Results | `.claude/processed/` | `Task X.Y - Test Results.md` | `Task 7.1 - Test Results.md` |
-| Screenshots | `.claude/screenshots/` | `test-X.Y-scenario-N-label.png` | `test-7.1-scenario-1-page-load.png` |
+| **Frontend Test Plan** | `.claude/tests/` | `Task X.Y - Frontend Test Plan.md` | `Task 7.1 - Frontend Test Plan.md` |
+| **Backend Test Plan** | `.claude/tests/` | `Task X.Y - Backend Test Plan.md` | `Task 7.1 - Backend Test Plan.md` |
+| **Mobile Test Plan** | `.claude/tests/` | `Task X.Y - Mobile Test Plan.md` | `Task 7.1 - Mobile Test Plan.md` |
+| Screenshots | `.claude/screenshots/` | `test-X.Y-FNN-[label].png` | `test-7.1-F01-page-load.png` |
+
+**One test plan file per platform per task. Results written back into the same file.**
 
 ---
 
@@ -330,8 +379,8 @@ Tests that protected routes redirect unauthenticated users:
 ```javascript
 // Clear Redux store to simulate logged-out state
 await page.evaluate(() => {
-    localStorage.clear();
-    sessionStorage.clear();
+  localStorage.clear();
+  sessionStorage.clear();
 });
 
 // Try to access protected route
@@ -357,30 +406,108 @@ await playwright_screenshot({ name: 'test-X.Y-scenario-3-after-login' });
 
 ---
 
-### Type 4 — Loading State (required for all API-connected components)
+### Type 4 — Loading State + RTK Query Crash Guard (required for ALL components)
 
-Tests that loading skeletons/spinners appear during data fetch:
+Tests two things simultaneously:
+1. That loading skeletons appear while the API is in flight
+2. That the component does NOT crash when `data` is `undefined`
+
+The crash guard is the most important part. A `TypeError: Cannot read properties
+of undefined` means the component accessed `data.X` before the API responded.
+This test catches it before it reaches production.
 
 ```javascript
-// Intercept API to delay response
-await page.route('**/api/public/blogs**', async (route) => {
-    await new Promise(resolve => setTimeout(resolve, 1000)); // 1s delay
-    await route.continue();
+// ── Collect JS errors — crash shows up here ──────────────────
+const jsErrors = [];
+page.on('pageerror', err => jsErrors.push(err.message));
+page.on('console', msg => {
+  if (msg.type() === 'error') jsErrors.push(msg.text());
 });
 
-await playwright_navigate({ url: 'http://localhost:5173/blog' });
+// ── Delay the API to force the "data=undefined" render ───────
+await page.route('**/api/**', async (route) => {
+  await new Promise(resolve => setTimeout(resolve, 1000)); // 1s — exposes the crash
+  await route.continue();
+});
 
-// Check loading state appears
-const skeleton = page.locator('[data-testid="skeleton"], .animate-pulse');
+await playwright_navigate({ url: 'http://localhost:5173/[route]' });
+
+// ── Check for crash IMMEDIATELY (before API responds) ────────
+await page.waitForTimeout(200); // let the first render attempt happen
+
+const crashes = jsErrors.filter(e =>
+  e.includes('Cannot read properties of undefined') ||
+  e.includes('Cannot read properties of null') ||
+  e.includes('is not a function') ||
+  e.includes('TypeError')
+);
+
+if (crashes.length > 0) {
+  console.log('❌ COMPONENT CRASHED during loading state:');
+  console.log('  Error:', crashes[0]);
+  console.log('  Fix: add data?.X ?? [] guards — read instructions/frontend.md Step 0b');
+} else {
+  console.log('✅ No crash during loading state (data=undefined handled correctly)');
+}
+
+// ── Check skeleton is visible ─────────────────────────────────
+const skeleton = page.locator('[data-testid="skeleton"], [data-testid="skeleton-row"]');
 const skeletonVisible = await skeleton.isVisible().catch(() => false);
-console.log('Loading skeleton shown:', skeletonVisible ? '✅' : '⚠️ Too fast to catch');
+console.log('Loading skeleton shown:', skeletonVisible ? '✅' : '⚠️ Skeleton not found');
 
 await playwright_screenshot({ name: 'test-X.Y-scenario-4-loading' });
 
-// Wait for content to load
-await page.waitForSelector('[data-testid="blog-card"]', { timeout: 10000 });
+// ── Wait for API to respond ───────────────────────────────────
+await page.waitForLoadState('networkidle');
+
+// ── Skeleton removed after load ───────────────────────────────
 const skeletonGone = !(await skeleton.isVisible().catch(() => false));
 console.log('Skeleton removed after load:', skeletonGone ? '✅' : '❌');
+
+// ── No new crashes after data arrived ────────────────────────
+const postLoadCrashes = jsErrors.filter(e => e.includes('TypeError'));
+console.log('No crashes after data loaded:', postLoadCrashes.length === 0 ? '✅' : '❌ ' + postLoadCrashes[0]);
+
+await playwright_screenshot({ name: 'test-X.Y-scenario-4-loaded' });
+```
+
+**Also add this as a separate scenario — RTK Query crash on unexpected shapes:**
+
+```javascript
+// Scenario 4b — Component handles null/empty API response without crashing
+
+const jsErrors4b = [];
+page.on('pageerror', err => jsErrors4b.push(err.message));
+
+// Test 1: API returns { success: true, data: null }
+await page.route('**/api/**', async route => {
+  await route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ success: true, data: null }),
+  });
+});
+await playwright_navigate({ url: 'http://localhost:5173/[route]' });
+await page.waitForLoadState('networkidle');
+
+const crashOnNull = jsErrors4b.filter(e => e.includes('Cannot read properties of null'));
+console.log('No crash on null data:', crashOnNull.length === 0 ? '✅' : '❌ ' + crashOnNull[0]);
+
+// Test 2: API returns empty object {}
+await page.route('**/api/**', async route => {
+  await route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({}),
+  });
+});
+await page.reload();
+await page.waitForLoadState('networkidle');
+
+const crashOnEmpty = jsErrors4b.filter(e => e.includes('TypeError'));
+console.log('No crash on empty response:', crashOnEmpty.length === 0 ? '✅' : '❌ ' + crashOnEmpty[0]);
+
+await playwright_screenshot({ name: 'test-X.Y-scenario-4b-crash-guard' });
 ```
 
 ---
@@ -392,18 +519,18 @@ Tests that empty state UI shows when no data is returned:
 ```javascript
 // Mock API to return empty array
 await page.route('**/api/public/case-studies**', async (route) => {
-    await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-            success: true,
-            data: [],
-            page: 0,
-            size: 10,
-            totalElements: 0,
-            totalPages: 0,
-        }),
-    });
+  await route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      success: true,
+      data: [],
+      page: 0,
+      size: 10,
+      totalElements: 0,
+      totalPages: 0,
+    }),
+  });
 });
 
 await playwright_navigate({ url: 'http://localhost:5173/case-studies' });
@@ -426,11 +553,11 @@ Tests that error UI shows when API fails:
 ```javascript
 // Mock API to return 500 error
 await page.route('**/api/public/blogs**', async (route) => {
-    await route.fulfill({
-        status: 500,
-        contentType: 'application/json',
-        body: JSON.stringify({ success: false, error: { message: 'Server error' } }),
-    });
+  await route.fulfill({
+    status: 500,
+    contentType: 'application/json',
+    body: JSON.stringify({ success: false, error: { message: 'Server error' } }),
+  });
 });
 
 await playwright_navigate({ url: 'http://localhost:5173/blog' });
@@ -494,36 +621,36 @@ const networkLog = [];
 const consoleErrors = [];
 
 page.on('request', req => {
-    if (req.url().includes('/api/')) {
-        networkLog.push({
-            method: req.method(),
-            url: req.url(),
-            hasAuth: !!req.headers()['authorization'],
-        });
-    }
+  if (req.url().includes('/api/')) {
+    networkLog.push({
+      method: req.method(),
+      url: req.url(),
+      hasAuth: !!req.headers()['authorization'],
+    });
+  }
 });
 
 page.on('response', res => {
-    if (res.url().includes('/api/')) {
-        networkLog.push({
-            url: res.url(),
-            status: res.status(),
-        });
-    }
+  if (res.url().includes('/api/')) {
+    networkLog.push({
+      url: res.url(),
+      status: res.status(),
+    });
+  }
 });
 
 page.on('console', msg => {
-    if (msg.type() === 'error') {
-        consoleErrors.push(msg.text());
-    }
+  if (msg.type() === 'error') {
+    consoleErrors.push(msg.text());
+  }
 });
 
 // Add at end of scenario — after all actions
 console.log('\n📡 Network Log:');
 networkLog.forEach(entry => {
-    const status = entry.status;
-    const icon = status >= 200 && status < 300 ? '✅' : '❌';
-    console.log(`  ${icon} ${entry.method || ''} ${entry.url} ${status || ''}`);
+  const status = entry.status;
+  const icon = status >= 200 && status < 300 ? '✅' : '❌';
+  console.log(`  ${icon} ${entry.method || ''} ${entry.url} ${status || ''}`);
 });
 
 console.log('\n🖥 Console Errors:', consoleErrors.length === 0 ? '✅ None' : `❌ ${consoleErrors.length}`);
@@ -537,13 +664,13 @@ if (consoleErrors.length > 0) console.log(consoleErrors);
 ```javascript
 // Read Redux store state from browser
 const reduxState = await page.evaluate(() => {
-    // RTK Query cache and auth slice
-    const state = window.__REDUX_STORE__?.getState();
-    return {
-        isAuthenticated: state?.auth?.isAuthenticated,
-        hasToken: !!state?.auth?.token,
-        userEmail: state?.auth?.user?.email,
-    };
+  // RTK Query cache and auth slice
+  const state = window.__REDUX_STORE__?.getState();
+  return {
+    isAuthenticated: state?.auth?.isAuthenticated,
+    hasToken: !!state?.auth?.token,
+    userEmail: state?.auth?.user?.email,
+  };
 });
 
 console.log('Redux auth state:', JSON.stringify(reduxState, null, 2));
@@ -558,28 +685,28 @@ console.log('Has token:', reduxState?.hasToken ? '✅' : '❌');
 ```javascript
 // Test all three viewports per scenario
 const viewports = [
-    { name: 'Desktop', width: 1280, height: 720 },
-    { name: 'Tablet', width: 768, height: 1024 },
-    { name: 'Mobile', width: 375, height: 812 },
+  { name: 'Desktop', width: 1280, height: 720 },
+  { name: 'Tablet', width: 768, height: 1024 },
+  { name: 'Mobile', width: 375, height: 812 },
 ];
 
 for (const viewport of viewports) {
-    await page.setViewportSize({ width: viewport.width, height: viewport.height });
-    await page.waitForTimeout(300);
+  await page.setViewportSize({ width: viewport.width, height: viewport.height });
+  await page.waitForTimeout(300);
 
-    const bodyVisible = await page.locator('body').isVisible();
-    const noHorizontalScroll = await page.evaluate(() =>
-        document.body.scrollWidth <= window.innerWidth
-    );
+  const bodyVisible = await page.locator('body').isVisible();
+  const noHorizontalScroll = await page.evaluate(() =>
+    document.body.scrollWidth <= window.innerWidth
+  );
 
-    console.log(`${viewport.name}:`,
-        bodyVisible && noHorizontalScroll ? '✅' : '❌',
-        `(${viewport.width}x${viewport.height})`
-    );
+  console.log(`${viewport.name}:`,
+    bodyVisible && noHorizontalScroll ? '✅' : '❌',
+    `(${viewport.width}x${viewport.height})`
+  );
 
-    await playwright_screenshot({
-        name: `test-X.Y-responsive-${viewport.name.toLowerCase()}`
-    });
+  await playwright_screenshot({
+    name: `test-X.Y-responsive-${viewport.name.toLowerCase()}`
+  });
 }
 ```
 
@@ -590,34 +717,34 @@ for (const viewport of viewports) {
 ```javascript
 // Run after page load in every scenario
 const a11yIssues = await page.evaluate(() => {
-    const issues = [];
+  const issues = [];
 
-    // Check all images have alt text
-    document.querySelectorAll('img').forEach(img => {
-        if (!img.alt) issues.push(`Missing alt: ${img.src}`);
-    });
+  // Check all images have alt text
+  document.querySelectorAll('img').forEach(img => {
+    if (!img.alt) issues.push(`Missing alt: ${img.src}`);
+  });
 
-    // Check all inputs have labels
-    document.querySelectorAll('input, select, textarea').forEach(input => {
-        const id = input.id;
-        const label = id ? document.querySelector(`label[for="${id}"]`) : null;
-        const ariaLabel = input.getAttribute('aria-label');
-        if (!label && !ariaLabel) issues.push(`Missing label: ${input.name || input.type}`);
-    });
+  // Check all inputs have labels
+  document.querySelectorAll('input, select, textarea').forEach(input => {
+    const id = input.id;
+    const label = id ? document.querySelector(`label[for="${id}"]`) : null;
+    const ariaLabel = input.getAttribute('aria-label');
+    if (!label && !ariaLabel) issues.push(`Missing label: ${input.name || input.type}`);
+  });
 
-    // Check error messages have role="alert"
-    document.querySelectorAll('.error, .text-red-600').forEach(el => {
-        if (!el.getAttribute('role')) issues.push(`Missing role="alert" on: ${el.textContent}`);
-    });
+  // Check error messages have role="alert"
+  document.querySelectorAll('.error, .text-red-600').forEach(el => {
+    if (!el.getAttribute('role')) issues.push(`Missing role="alert" on: ${el.textContent}`);
+  });
 
-    // Check icon buttons have aria-label
-    document.querySelectorAll('button').forEach(btn => {
-        const hasText = btn.textContent?.trim().length > 0;
-        const hasAriaLabel = btn.getAttribute('aria-label');
-        if (!hasText && !hasAriaLabel) issues.push('Icon button missing aria-label');
-    });
+  // Check icon buttons have aria-label
+  document.querySelectorAll('button').forEach(btn => {
+    const hasText = btn.textContent?.trim().length > 0;
+    const hasAriaLabel = btn.getAttribute('aria-label');
+    if (!hasText && !hasAriaLabel) issues.push('Icon button missing aria-label');
+  });
 
-    return issues;
+  return issues;
 });
 
 console.log('Accessibility issues:', a11yIssues.length === 0 ? '✅ None' : `❌ ${a11yIssues.length}`);
@@ -734,53 +861,53 @@ if (a11yIssues.length > 0) a11yIssues.forEach(i => console.log('  ❌', i));
 ```javascript
 // Standard regression suite — run at end of every task test
 async function runRegressionTests(page) {
-    console.log('\n🔁 REGRESSION SMOKE TESTS');
-    console.log('─────────────────────────');
+  console.log('\n🔁 REGRESSION SMOKE TESTS');
+  console.log('─────────────────────────');
 
-    const checks = [];
+  const checks = [];
 
-    // 1. Home page loads
-    await playwright_navigate({ url: 'http://localhost:5173' });
-    await page.waitForLoadState('networkidle');
-    const homeLoads = await page.locator('body').isVisible();
-    checks.push({ name: 'Home page loads', pass: homeLoads });
+  // 1. Home page loads
+  await playwright_navigate({ url: 'http://localhost:5173' });
+  await page.waitForLoadState('networkidle');
+  const homeLoads = await page.locator('body').isVisible();
+  checks.push({ name: 'Home page loads', pass: homeLoads });
 
-    // 2. Public API accessible
-    const apiCheck = await page.evaluate(async () => {
-        try {
-            const res = await fetch('http://localhost:8080/api/public/stats');
-            return res.ok;
-        } catch { return false; }
-    });
-    checks.push({ name: 'Public API accessible', pass: apiCheck });
+  // 2. Public API accessible
+  const apiCheck = await page.evaluate(async () => {
+    try {
+      const res = await fetch('http://localhost:8080/api/public/stats');
+      return res.ok;
+    } catch { return false; }
+  });
+  checks.push({ name: 'Public API accessible', pass: apiCheck });
 
-    // 3. Admin login page loads
-    await playwright_navigate({ url: 'http://localhost:5173/admin/login' });
-    const loginLoads = await page.locator('input[type="email"]').isVisible();
-    checks.push({ name: 'Admin login page loads', pass: loginLoads });
+  // 3. Admin login page loads
+  await playwright_navigate({ url: 'http://localhost:5173/admin/login' });
+  const loginLoads = await page.locator('input[type="email"]').isVisible();
+  checks.push({ name: 'Admin login page loads', pass: loginLoads });
 
-    // 4. TypeScript build passes
-    // Checked separately via: npm run build
-    // Agent must run: npm run build → verify 0 errors before marking task complete
+  // 4. TypeScript build passes
+  // Checked separately via: npm run build
+  // Agent must run: npm run build → verify 0 errors before marking task complete
 
-    // 5. No console errors on home page
-    const consoleErrors = [];
-    page.on('console', msg => {
-        if (msg.type() === 'error') consoleErrors.push(msg.text());
-    });
-    await playwright_navigate({ url: 'http://localhost:5173' });
-    await page.waitForLoadState('networkidle');
-    checks.push({ name: 'No console errors on home', pass: consoleErrors.length === 0 });
+  // 5. No console errors on home page
+  const consoleErrors = [];
+  page.on('console', msg => {
+    if (msg.type() === 'error') consoleErrors.push(msg.text());
+  });
+  await playwright_navigate({ url: 'http://localhost:5173' });
+  await page.waitForLoadState('networkidle');
+  checks.push({ name: 'No console errors on home', pass: consoleErrors.length === 0 });
 
-    // Report
-    console.log('');
-    checks.forEach(c => {
-        console.log(`  ${c.pass ? '✅' : '❌'} ${c.name}`);
-    });
+  // Report
+  console.log('');
+  checks.forEach(c => {
+    console.log(`  ${c.pass ? '✅' : '❌'} ${c.name}`);
+  });
 
-    const allPassed = checks.every(c => c.pass);
-    console.log(`\nRegression: ${allPassed ? '✅ ALL PASSED' : '❌ FAILURES FOUND'}`);
-    return allPassed;
+  const allPassed = checks.every(c => c.pass);
+  console.log(`\nRegression: ${allPassed ? '✅ ALL PASSED' : '❌ FAILURES FOUND'}`);
+  return allPassed;
 }
 ```
 
@@ -850,8 +977,8 @@ Every interactive or verifiable UI element must have a `data-testid` attribute. 
 <form data-testid="consultation-form" />
 <div data-testid="success-message" />
 
-    // ❌ Wrong — fragile selectors
-    page.locator('.blog-card')           // CSS class can change
+// ❌ Wrong — fragile selectors
+page.locator('.blog-card')           // CSS class can change
 page.locator('text=Read More')       // Text can change
 page.locator('div > div > h3')       // Structure can change
 ```

@@ -30,6 +30,293 @@ choices in this file.** The agent never uses generic `gray-*`, `white`, or
 
 ---
 
+## Step 0b — RTK Query Data Safety Rules (Read Before Writing Any Component)
+
+These rules exist because of a class of runtime crash that affects every
+page that fetches data. The crash looks like this:
+
+```
+TypeError: Cannot read properties of undefined (reading 'length')
+    at BlogListPage (BlogListPage.tsx:376:36)
+```
+
+**Why it happens:** RTK Query returns `data = undefined` on the first render
+while the API call is in flight. Any code that calls `.length`, `.map()`,
+`.find()`, or accesses a nested property on `data` before the response
+arrives will crash the entire page.
+
+**This is not optional.** Every component that uses an RTK Query hook must
+follow every rule below — no exceptions.
+
+---
+
+### Rule 1 — Never Access Data Directly
+
+```typescript
+// ❌ CRASHES — data is undefined on first render
+const { data } = useGetBlogsQuery();
+const count = data.length;          // TypeError: Cannot read properties of undefined
+const items = data.data.map(...);   // TypeError: Cannot read properties of undefined
+
+// ❌ ALSO CRASHES — destructuring undefined throws
+const { data: blogList } = useGetBlogsQuery();
+const { items, total } = blogList;  // TypeError: Cannot destructure undefined
+
+// ✅ CORRECT — optional chaining + nullish coalescing
+const { data } = useGetBlogsQuery();
+const items = data?.data ?? [];
+const total = data?.totalElements ?? 0;
+const totalPages = data?.totalPages ?? 0;
+```
+
+**The rule:** Every property access on `data` from an RTK Query hook must
+use `?.` (optional chaining). Every array must default to `[]`. Every
+number must default to `0`. Every string must default to `''`.
+
+---
+
+### Rule 2 — Always Destructure With Safe Defaults
+
+```typescript
+// ❌ Wrong — no defaults
+const { data, isLoading, error } = useGetBlogsQuery(params);
+// data is undefined here until the API responds
+
+// ✅ Correct — always destructure these four values
+const {
+  data,
+  isLoading,
+  isFetching,
+  isError,
+  error,
+  refetch,
+} = useGetBlogsQuery(params);
+
+// ✅ Then define safe locals from data
+const items       = data?.data          ?? [];
+const total       = data?.totalElements ?? 0;
+const totalPages  = data?.totalPages    ?? 0;
+const currentPage = data?.page          ?? 0;
+```
+
+---
+
+### Rule 3 — Render Guards In This Exact Order
+
+Every component that calls an RTK Query hook must render in this exact order.
+No exceptions. Never skip a guard.
+
+```typescript
+export default function AnyListPage() {
+  const { data, isLoading, isError, refetch } = useGetItemsQuery(params);
+
+  const items = data?.data ?? [];
+  const total = data?.totalElements ?? 0;
+
+  // ── GUARD 1: Loading ───────────────────────────────────────
+  // Must be FIRST — before any access to data
+  if (isLoading) {
+    return (
+      <div data-testid="skeleton">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div
+            key={i}
+            className="animate-pulse bg-surface-high rounded-xl h-16 mb-3"
+            data-testid="skeleton-row"
+          />
+        ))}
+      </div>
+    );
+  }
+
+  // ── GUARD 2: Error ─────────────────────────────────────────
+  // Must be SECOND — before accessing data properties
+  if (isError) {
+    return (
+      <div data-testid="error-state" className="text-center py-12">
+        <p className="text-onsurface-variant mb-4">
+          Failed to load. Please try again.
+        </p>
+        <button
+          onClick={refetch}
+          className="text-primary hover:text-primary-container"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  // ── GUARD 3: Empty ─────────────────────────────────────────
+  // Must be THIRD — after loading and error, using safe local
+  if (items.length === 0) {
+    return (
+      <div data-testid="empty-state" className="text-center py-12">
+        <p className="text-onsurface-variant">No items found.</p>
+      </div>
+    );
+  }
+
+  // ── MAIN RENDER ────────────────────────────────────────────
+  // Only reached when: not loading + no error + has items
+  // At this point data is guaranteed to exist
+  return (
+    <div>
+      {items.map((item) => (
+        <ItemCard key={item.id} item={item} />
+      ))}
+      <p className="text-onsurface-variant text-sm">
+        Showing {items.length} of {total}
+      </p>
+    </div>
+  );
+}
+```
+
+**The order is non-negotiable:**
+1. `isLoading` guard — before everything
+2. `isError` guard — before accessing `data`
+3. `items.length === 0` guard — using the safe local, not `data`
+4. Main render — only now is data safe to use
+
+---
+
+### Rule 4 — Never Use `data.data` In JSX Directly
+
+```typescript
+// ❌ CRASHES if API is slow or returns unexpected shape
+{data.data.map((blog) => <BlogCard key={blog.id} blog={blog} />)}
+
+// ✅ CORRECT — use safe local defined at top of component
+const blogs = data?.data ?? [];
+// ...guards...
+{blogs.map((blog) => <BlogCard key={blog.id} blog={blog} />)}
+```
+
+---
+
+### Rule 5 — Match Types to Actual API Response Shape
+
+The most common cause of this crash is a type mismatch — the TypeScript type
+says one shape but the API returns a different shape. RTK Query gets confused
+about what `data` is.
+
+The backend returns this shape (standard `ApiResponse<T>`):
+```json
+{
+  "success": true,
+  "data": [...],
+  "totalElements": 47,
+  "totalPages": 5,
+  "page": 0,
+  "size": 10
+}
+```
+
+The RTK Query response type must match exactly:
+
+```typescript
+// src/features/blog/types.ts
+
+// ✅ Correct — matches the actual backend ApiResponse<Page<Blog>>
+export interface BlogListResponse {
+  data: Blog[];
+  totalElements: number;
+  totalPages: number;
+  page: number;
+  size: number;
+}
+
+// ❌ Wrong — treats data as a plain array
+export type BlogListResponse = Blog[];
+// RTK Query sets data = the whole response object
+// data.length crashes because objects don't have .length
+```
+
+If `transformResponse` is used in the API slice — verify it unwraps correctly:
+
+```typescript
+// src/features/blog/api.ts
+getBlogs: builder.query<BlogListResponse, BlogListParams>({
+  query: (params) => ({ url: '/admin/blogs', params }),
+  // If NOT using transformResponse: data = full { success, data, totalElements }
+  // Component must use data?.data ?? []
+  //
+  // If using transformResponse to unwrap:
+  transformResponse: (response: ApiResponse<BlogListResponse>) => response.data,
+  // Component uses data?.data ?? []  — because response.data IS the BlogListResponse
+  //
+  // Pick ONE approach and use it consistently across all slices
+}),
+```
+
+---
+
+### Rule 6 — isFetching vs isLoading
+
+```typescript
+const { data, isLoading, isFetching } = useGetBlogsQuery(params);
+
+// isLoading = true ONLY on the very first load (no cached data yet)
+// isFetching = true on first load AND on every re-fetch (filter change, refetch call)
+
+// Show skeleton only on first load:
+if (isLoading) return <Skeleton />;
+
+// Show subtle loading indicator on re-fetch (data already visible):
+return (
+  <div>
+    {isFetching && <div className="h-1 bg-primary animate-pulse" />}  {/* thin top bar */}
+    {items.map(...)}
+  </div>
+);
+```
+
+---
+
+### Rule 7 — Mutation Loading State
+
+```typescript
+// ❌ Button stays active during API call — user can double-submit
+const [createBlog] = useCreateBlogMutation();
+<button onClick={() => createBlog(data)}>Save</button>
+
+// ✅ Button disabled during mutation
+const [createBlog, { isLoading: isSaving }] = useCreateBlogMutation();
+<button
+  onClick={() => createBlog(data)}
+  disabled={isSaving}
+  data-testid="save-btn"
+>
+  {isSaving ? 'Saving...' : 'Save'}
+</button>
+```
+
+---
+
+### Rule 8 — The Checklist (Run Before Submitting Any Component)
+
+Before writing any component that uses RTK Query — run through this list:
+
+```
+□ useGetXQuery hook destructures: data, isLoading, isError, refetch
+□ Safe locals defined: const items = data?.data ?? []
+□ Guard 1 present: if (isLoading) return <Skeleton />
+□ Guard 2 present: if (isError) return <ErrorState />
+□ Guard 3 present: if (items.length === 0) return <EmptyState />
+□ No direct data.X access in JSX — always through safe locals
+□ No data.data.map() — always through const items = data?.data ?? []
+□ Mutation has disabled={isLoading} on submit button
+□ data-testid="skeleton" on loading state
+□ data-testid="error-state" on error state
+□ data-testid="empty-state" on empty state
+□ TypeScript type matches actual API response shape
+```
+
+If any box is unchecked → the component will crash in production.
+
+---
+
 ## Stack
 
 - **Framework**: React 18 + TypeScript
@@ -233,7 +520,9 @@ Is it data from backend?
 **Use for everything from the API:**
 ```typescript
 // ✅ Correct — server data via RTK Query
-const { data: blogs, isLoading } = useGetBlogsQuery({ page: 0, size: 10 });
+const { data, isLoading, isError, refetch } = useGetBlogsQuery({ page: 0, size: 10 });
+const blogs = data?.data ?? [];          // ✅ safe local — never undefined
+const total = data?.totalElements ?? 0;  // ✅ safe local
 
 // ❌ Wrong — server data in useState
 const [blogs, setBlogs] = useState([]);
@@ -453,21 +742,29 @@ export function BlogList({ initialCategory }: BlogListProps) {
   }
 
   // 3h. Main render
+  // data is guaranteed non-undefined here (guards above ran first)
+  // Still use the safe local defined at top — never data.data.map() directly
   return (
     <div>
       <BlogFilter filters={filters} onChange={handleFilterChange} />
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {data.data.map((blog) => (
+        {blogs.map((blog) => (       // ✅ blogs = data?.data ?? [] — defined at top
           <BlogCard key={blog.id} blog={blog} />
         ))}
       </div>
+      <p className="text-sm text-onsurface-variant">
+        Showing {blogs.length} of {total}  {/* ✅ safe locals */}
+      </p>
     </div>
   );
 }
 ```
 
 **Component rules:**
-- Always handle loading, error, and empty states — no exceptions
+- Read Step 0b before writing any component — RTK Query safety rules are mandatory
+- Always define safe locals at the top: `const items = data?.data ?? []`
+- Always render in order: isLoading guard → isError guard → empty guard → main render
+- Never use `data.data.map()` directly in JSX — always through a safe local
 - One component per file — never multiple exports in one file
 - Props interface defined above the component — never inline
 - No business logic in JSX — extract to handlers above return

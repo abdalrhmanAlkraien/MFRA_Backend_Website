@@ -67,7 +67,7 @@
 **Spec**: designs/2.md
 **Requirements**: designs/2-requirements.md
 **Analyzed on**: 29/03/2026 at 12:00
-**Last update**: 29/03/2026 at 12:00
+**Last update**: 30/03/2026 at 18:00
 
 ### Stage Status
 
@@ -87,6 +87,14 @@
 | 2.1 | Backend | Dashboard summary, access logs, node perf, security APIs | ⏳ Pending | 1.3 |
 | 2.2 | Frontend | Dashboard page — stat cards, logs, panels | ⏳ Pending | 1.6, 2.1 |
 
+### Files Built from This Page
+
+**Backend:**
+(reset — will be filled again when task completes)
+
+**Frontend:**
+(reset — will be filled again when task completes)
+
 ---
 
 ## Page 3 — Blog List (Content Architecture)
@@ -95,7 +103,7 @@
 **Spec**: designs/3.md
 **Requirements**: designs/3-requirements.md
 **Analyzed on**: 29/03/2026 at 12:00
-**Last update**: 29/03/2026 at 12:00
+**Last update**: 30/03/2026 at 18:00
 
 ### Stage Status
 
@@ -113,6 +121,14 @@
 |----|----------|-------------|--------|------------|
 | 3.1 | Backend | Blog entities, repos, services, admin controllers | ⏳ Pending | 1.3, 1.4 |
 | 3.3 | Frontend | Blog list page — table, filters, pagination, insight cards | ⏳ Pending | 1.6, 3.1 |
+
+### Files Built from This Page
+
+**Backend:**
+(reset — will be filled again when task completes)
+
+**Frontend:**
+(reset — will be filled again when task completes)
 
 ---
 

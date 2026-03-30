@@ -325,6 +325,7 @@ Fix:    [exact command to run]
 | `/continue-tasks` | Yes — at start | Silent |
 | `/check-ready` (direct) | N/A | Full report |
 | `/review-progress` | No | — |
+| `/review-page [N]` | No | — |
 | `/fix-task` | No | — |
 | `/add-feature` | No | — |
 
