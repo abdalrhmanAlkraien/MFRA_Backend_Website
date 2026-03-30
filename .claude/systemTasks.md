@@ -3,15 +3,15 @@
 **Project**: MFRA Website
 **Total tasks**: 21
 **Generated**: 29/03/2026 at 12:00
-**Last updated**: 29/03/2026 at 12:00
+**Last updated**: 30/03/2026 at 20:00
 
 ---
 
 ## Phase 1 — Foundation
 
 ### Task 1.1: Project Scaffold + Docker Compose
-- **Status**: ⏳ Pending
-- **Actual cost**: —
+- **Status**: ✅ Completed
+- **Actual cost**: $0.80
 - **Platform**: Backend + Frontend
 - **Dependencies**: none
 - **Complexity**: Medium
@@ -26,8 +26,8 @@
   - Flyway V1__init_schema.sql (enable UUID extension)
 
 ### Task 1.2: Database + Flyway + Core Entities
-- **Status**: ⏳ Pending
-- **Actual cost**: —
+- **Status**: ✅ Completed
+- **Actual cost**: $0.30
 - **Platform**: Backend
 - **Dependencies**: 1.1
 - **Complexity**: Medium
@@ -42,8 +42,8 @@
   - V1__init_schema.sql
 
 ### Task 1.3: Security Config + JWT Auth
-- **Status**: ⏳ Pending
-- **Actual cost**: —
+- **Status**: ✅ Completed
+- **Actual cost**: $1.20
 - **Platform**: Backend
 - **Dependencies**: 1.2
 - **Complexity**: Complex
@@ -70,8 +70,8 @@
 - **Tests**: 12 scenarios (login success, invalid creds, locked IP, logout, refresh, expired token, wrong role)
 
 ### Task 1.4: File Upload Service (S3)
-- **Status**: ⏳ Pending
-- **Actual cost**: —
+- **Status**: ✅ Completed
+- **Actual cost**: $0.40
 - **Platform**: Backend
 - **Dependencies**: 1.3
 - **Complexity**: Medium
@@ -87,8 +87,8 @@
 - **Tests**: 6 scenarios (valid upload, wrong format, too large, unauthorized)
 
 ### Task 1.5: Auth Frontend — Login Page + AuthGuard
-- **Status**: ⏳ Pending
-- **Actual cost**: —
+- **Status**: ✅ Completed
+- **Actual cost**: $0.00 (merged with 1.3)
 - **Platform**: Frontend
 - **Dependencies**: 1.3
 - **Complexity**: Medium
@@ -108,8 +108,8 @@
 - **Tests**: 8 scenarios (render, submit, validation, error states, redirect)
 
 ### Task 1.6: Admin Layout Shell (Frontend)
-- **Status**: ⏳ Pending
-- **Actual cost**: —
+- **Status**: ✅ Completed
+- **Actual cost**: $0.60
 - **Platform**: Frontend
 - **Dependencies**: 1.5
 - **Complexity**: Medium
@@ -130,8 +130,8 @@
 ## Phase 2 — Dashboard Module
 
 ### Task 2.1: Dashboard Backend
-- **Status**: ⏳ Pending
-- **Actual cost**: —
+- **Status**: ✅ Completed
+- **Actual cost**: $0.60
 - **Platform**: Backend
 - **Dependencies**: 1.3
 - **Complexity**: Medium
@@ -142,7 +142,7 @@
   - AccessLogEntity + AccessLogRepository
   - NodePerformanceEntity + NodePerformanceRepository
   - SecurityStatusEntity + SecurityStatusRepository
-  - V5__create_dashboard_tables.sql
+  - V3__create_dashboard_tables.sql
   - Dashboard DTOs
 - **Endpoints**:
   - GET /api/admin/dashboard/summary
@@ -153,8 +153,8 @@
 - **Tests**: 8 scenarios
 
 ### Task 2.2: Dashboard Frontend
-- **Status**: ⏳ Pending
-- **Actual cost**: —
+- **Status**: ✅ Completed
+- **Actual cost**: $0.60
 - **Platform**: Frontend
 - **Dependencies**: 1.6, 2.1
 - **Complexity**: Medium

@@ -47,15 +47,17 @@ Step 1 — Read context
   Read: designs/[N]-requirements.md   ← page-specific rules → edge cases
   Read: .claude/systemTasks.md        ← current task ID
 
-Step 2 — Write the Playwright spec file
+Step 2 — Write the Playwright spec file (GATE 1 checks this)
   Create: tests/e2e/<module>/<page-name>.spec.ts
   Fill in: all test cases — TC-F-01 through TC-F-NN
   DO NOT run Playwright yet
 
-  Verify the file exists before continuing:
+  GATE 1 verification — must pass before Step 3:
   ls tests/e2e/<module>/
-  → Must show: <page-name>.spec.ts with content
-  → If empty or missing → write it now before continuing
+  → Must show: <page-name>.spec.ts
+  grep -c "test(" tests/e2e/<module>/<page-name>.spec.ts
+  → Must show: count > 0
+  → If 0 or missing → write the test cases NOW — gate blocks Step 3
 
 Step 3 — Generate test plan file (documentation)
   Create: .claude/tests/Task X.Y - Frontend Test Plan.md
@@ -76,6 +78,10 @@ Step 6 — Run Playwright
   Or: npx playwright test (run all spec files for this task)
   Each test captures a screenshot automatically
 
+Step 6b — GATE 2: Verify all scenarios passed (100% required)
+  If ANY scenario failed → STOP → fix it → re-run → only continue at 100%
+  A task with failing Playwright tests cannot be marked complete.
+
 Step 7 — Write results back into plan file
   For each scenario row in the plan file:
     → Fill in: ✅ PASS or ❌ FAIL
@@ -85,9 +91,25 @@ Step 7 — Write results back into plan file
   Update systemTasks.md — exactly once
 ```
 
-**An empty `tests/e2e/` directory = no tests were written = task is NOT complete.**
-**Write the .spec.ts file (Step 2) before running Playwright (Step 6).**
-**Tasks cannot be marked complete without all scenarios passing — no exceptions.**
+**Two hard stop gates enforce this:**
+
+**Gate 1 — Step 7b (before Playwright runs):**
+Checks that `tests/e2e/<module>/<page>.spec.ts` exists AND has `test(` blocks.
+If file is missing or has 0 test blocks → agent STOPS and returns to write it.
+
+**Gate 2 — Step 9b (after Playwright runs):**
+Checks that ALL scenarios PASS (100%).
+If any scenario fails → agent STOPS and fixes before marking task complete.
+
+An empty `tests/e2e/` directory triggers Gate 1 and blocks execution.
+A failing Playwright scenario triggers Gate 2 and blocks completion.
+
+Verify before running Playwright:
+```bash
+ls tests/e2e/<module>/
+grep -c "test(" tests/e2e/<module>/<page>.spec.ts
+```
+If count is 0 → write the test cases before running npx playwright test.
 
 ---
 

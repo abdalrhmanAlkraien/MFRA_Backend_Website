@@ -62,56 +62,56 @@ The agent reads the following instruction files when a configuration is needed:
 
 ## 1. Database Configuration
 
-**Status**: ❌ MISSING
+**Status**: ✅ READY
 
 **Instruction file**: `instructions/database.md`
 **Required by**: Every module — must be set up in Phase 1
 **Needed by**: Pages 1-8 (all analyzed pages) — Task 1.2
 
 ```
-Provider:        [ ] PostgreSQL  [ ] MySQL  [ ] Other: ________
-Version:         _______________
-Migration tool:  [ ] Flyway  [ ] Liquibase
-ORM:             [ ] Spring Data JPA + Hibernate
-Connection pool: [ ] HikariCP (default)  [ ] Other: ________
+Provider:        [x] PostgreSQL  [ ] MySQL  [ ] Other: ________
+Version:         15.13
+Migration tool:  [x] Flyway
+ORM:             [x] Spring Data JPA + Hibernate
+Connection pool: [x] HikariCP (default)
 
 Environment variables:
-  DB_HOST:     ❌ not set
-  DB_PORT:     ❌ not set
-  DB_NAME:     ❌ not set
-  DB_USER:     ❌ not set
-  DB_PASS:     ❌ not set
+  DB_HOST:     ✅ localhost (default)
+  DB_PORT:     ✅ 5460 (mapped from 5432)
+  DB_NAME:     ✅ mfra
+  DB_USER:     ✅ mfra
+  DB_PASS:     ✅ mfra
 
 application.yml key: spring.datasource
 Config class:   N/A — auto-configured by Spring Boot
 Migration path: src/main/resources/db/migration/
 
-Setup completed in task: _______________
-Notes: _______________
+Setup completed in task: 1.1 + 1.2
+Notes: Database cleaned and Flyway V1 applied fresh. pgcrypto extension enabled.
 ```
 
 ---
 
 ## 2. Cache Configuration
 
-**Status**: ❌ MISSING
+**Status**: ⚠️ PARTIAL
 
 **Instruction file**: `instructions/cache.md`
 **Required by**: Public read endpoints, stats, settings, blog/case study lists
 **Needed by**: Pages 3, 6 (blog/CS public lists), JWT blacklist (Page 1) — Task 1.3, 3.2, 4.2
 
 ```
-Provider:   [ ] Redis  [ ] Memcached  [ ] Not used (mark ⛔)
+Provider:   [x] Redis  [ ] Memcached  [ ] Not used (mark ⛔)
 
 If Redis:
-  Version:            _______________
+  Version:            7
   Config class:       config/RedisConfig.java
-  CacheManager:       RedisCacheManager with per-cache TTL
-  Template:           RedisTemplate<String, Object>
+  CacheManager:       Not yet — RedisCacheManager added in cache tasks
+  Template:           StringRedisTemplate (for JWT blacklist + rate limiting)
 
   Environment variables:
-    REDIS_HOST:   ❌ not set
-    REDIS_PORT:   ❌ not set
+    REDIS_HOST:   ✅ localhost (default)
+    REDIS_PORT:   ✅ 6380 (mapped from 6379, avoiding port conflict)
 
   Cache names configured:
     [ ] stats          TTL: 24h
@@ -231,40 +231,39 @@ Notes: _______________
 
 ## 5. Security / JWT Configuration
 
-**Status**: ❌ MISSING
+**Status**: ✅ READY
 
 **Instruction file**: `instructions/backend.md` (Security section)
 **Required by**: All admin endpoints, authentication
 **Needed by**: Pages 1-8 (all admin pages require JWT) — Task 1.3
 
 ```
-Auth mechanism:   [ ] JWT (stateless)  [ ] Session-based  [ ] Other: ________
+Auth mechanism:   [x] JWT (stateless)  [ ] Session-based  [ ] Other: ________
 
 Dependencies added to pom.xml:
-  [ ] spring-boot-starter-security
-  [ ] jjwt-api
-  [ ] jjwt-impl
-  [ ] jjwt-jackson
+  [x] spring-boot-starter-security
+  [x] jjwt-api
+  [x] jjwt-impl
+  [x] jjwt-jackson
 
 Config classes:
-  [ ] config/SecurityConfig.java
-  [ ] common/security/JwtUtil.java
-  [ ] common/security/JwtAuthFilter.java
+  [x] config/SecurityConfig.java
+  [x] module/auth/security/JwtUtil.java
+  [x] module/auth/security/JwtAuthFilter.java
 
 Roles configured:
-  [ ] ROLE_ADMIN
-  [ ] ROLE_EDITOR
-  [ ] Other: ________
+  [x] ROLE_ADMIN
+  [x] ROLE_EDITOR
 
 Environment variables:
-  JWT_SECRET:              ❌ not set
-  JWT_EXPIRATION_MS:       ❌ not set  (default: 3600000 = 1h)
-  JWT_REFRESH_EXPIRATION_MS: ❌ not set (default: 604800000 = 7d)
+  JWT_SECRET:              ✅ set (default for dev)
+  JWT_EXPIRATION_MS:       ✅ 3600000 (1h)
+  JWT_REFRESH_EXPIRATION_MS: ✅ 604800000 (7d)
 
 Redis used for:
-  [ ] JWT blacklist (logout)
-  [ ] Refresh tokens
-  [ ] Rate limiting
+  [x] JWT blacklist (logout)
+  [x] Refresh tokens
+  [x] Rate limiting (login)
 
 Public endpoints (no auth):
   /api/public/**
@@ -274,15 +273,17 @@ Public endpoints (no auth):
   /v3/api-docs/**
 
 application.yml key: app.jwt
-Setup completed in task: _______________
-Notes: _______________
+Setup completed in task: 1.3
+Notes: Full JWT auth with login/refresh/logout, rate limiting on login (5 attempts/15min/IP),
+       default admin seeded on startup (admin@mfra.com / admin123).
+       Frontend: LoginPage, AuthGuard, RoleGuard, authSlice, authApi.
 ```
 
 ---
 
 ## 6. File Storage Configuration
 
-**Status**: ❌ MISSING
+**Status**: ✅ READY
 
 **Instruction file**: N/A — see CLAUDE.md for project-specific details
 **Required by**: Image uploads (blog cover, case study architecture diagram, team photos)
@@ -351,7 +352,7 @@ Notes: _______________
 
 ## 8. Rate Limiting Configuration
 
-**Status**: ❌ MISSING
+**Status**: ⚠️ PARTIAL (login only)
 
 **Instruction file**: `instructions/backend.md` (Rate Limiting section)
 **Required by**: Public POST endpoints (consultation, contact)
@@ -378,7 +379,7 @@ Notes: _______________
 
 ## 9. CORS Configuration
 
-**Status**: ❌ MISSING
+**Status**: ✅ READY
 
 **Instruction file**: N/A — standard setup
 **Required by**: All API endpoints (frontend must be able to call backend)
@@ -407,23 +408,23 @@ Notes: _______________
 
 ## 10. Docker / Local Infrastructure
 
-**Status**: ❌ MISSING
+**Status**: ✅ READY
 
 **Instruction file**: N/A
 **Required by**: Local development and testing
 
 ```
 docker-compose.yml services:
-  [ ] PostgreSQL    port: 5432
-  [ ] Redis         port: 6379  (if cache = Redis)
+  [x] PostgreSQL    port: 5460 (mapped from 5432)
+  [x] Redis         port: 6380 (mapped from 6379)
   [ ] Memcached     port: 11211 (if cache = Memcached)
-  [ ] Mailhog       SMTP: 1025, UI: 8025  (if email configured)
+  [x] Mailhog       SMTP: 1025, UI: 8025
 
 docker-compose.yml location: project root
 Start command: docker compose up -d
 
-Setup completed in task: _______________
-Notes: _______________
+Setup completed in task: 1.1
+Notes: PostgreSQL mapped to port 5460 to avoid conflicts
 ```
 
 
@@ -688,20 +689,20 @@ what is available and what is missing:
 
 | # | Configuration | Status | Needed By | Set Up In Task |
 |---|---|---|---|---|
-| 1 | Database | ❌ MISSING | All pages | Task 1.2 |
-| 2 | Cache (Redis) | ❌ MISSING | Pages 1,3,6 (JWT + public lists) | Task 1.3 |
+| 1 | Database | ✅ READY | All pages | Task 1.2 |
+| 2 | Cache (Redis) | ⚠️ PARTIAL | Pages 1,3,6 (JWT + public lists) | Task 1.3 |
 | 3 | Email | ✅ READY | Pages 9-14 (pending specs) | Task 5.1 |
 | 4 | Async | ✅ READY | Email, exports | Task 5.1 |
-| 5 | Security / JWT | ❌ MISSING | All admin pages (1-8) | Task 1.3 |
-| 6 | File Storage (S3) | ❌ MISSING | Pages 5, 8 (image uploads) | Task 1.4 |
+| 5 | Security / JWT | ✅ READY | All admin pages (1-8) | Task 1.3 |
+| 6 | File Storage (S3) | ✅ READY | Pages 5, 8 (image uploads) | Task 1.4 |
 | 7 | API Docs (Swagger) | ❌ MISSING | All endpoints | Task 1.3 |
-| 8 | Rate Limiting | ❌ MISSING | Page 1 (login), future forms | Task 1.3 |
-| 9 | CORS | ❌ MISSING | All API calls | Task 1.3 |
-| 10 | Docker / Local | ❌ MISSING | Local dev | Task 1.1 |
+| 8 | Rate Limiting | ⚠️ PARTIAL | Page 1 (login), future forms | Task 1.3 |
+| 9 | CORS | ✅ READY | All API calls | Task 1.3 |
+| 10 | Docker / Local | ✅ READY | Local dev | Task 1.1 |
 | 11 | SMS | ⛔ NOT USED | — | — |
 | 12 | Notifications (Push) | ⛔ NOT USED | — | — |
 | 13 | WhatsApp | ❌ MISSING | Public pages (static link) | Future |
 | 14 | WebSocket / SSE | ⛔ NOT USED | — | — |
 
-**Last updated**: 29/03/2026 at 12:00
-**Updated by**: /analyze-designs
+**Last updated**: 30/03/2026 at 15:00
+**Updated by**: Task 1.3 + 1.5

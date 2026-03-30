@@ -6,25 +6,42 @@
 
 ---
 
-## The Non-Negotiable Rule
+## The Non-Negotiable Rule — Enforced by Hard Stop Gates
 
 **Write the Java test files FIRST. Run `mvn verify` SECOND.**
 
-An empty `src/test/` package means the task was never tested.
-Before running `mvn clean verify`, the following files must exist
-and contain test methods:
+The AI agent has TWO automatic gates that block execution if tests are missing:
+
+**Gate 1 — Step 7b (before test runner):**
+Checks that test files EXIST and have `@Test` methods.
+If files are missing or have 0 methods → agent STOPS and returns to write them.
+
+**Gate 2 — Step 9b (after test runner):**
+Checks that ALL tests PASS (100%).
+If any test fails → agent STOPS and fixes before marking task complete.
+
+These gates cannot be bypassed. The agent cannot reach Step 8 or Step 10
+without passing them.
+
+An empty `src/test/` package means Gate 1 blocks execution.
+A failing test means Gate 2 blocks completion.
+
+**Before running `mvn clean verify`, these files must exist:**
 
 ```
 src/test/java/com/<pkg>/<module>/
-├── <Module>ServiceTest.java      ← minimum 8 unit test methods
-└── <Module>ControllerTest.java   ← minimum 15 integration test methods
+├── <Module>ServiceTest.java      ← unit tests — @Test methods required
+└── <Module>ControllerTest.java   ← integration tests — @Test methods required
 ```
 
-The agent must write these files explicitly. Skipping this step and running
-`mvn verify` on an empty test package produces a 0-test build that shows
-`BUILD SUCCESS` — which is a false positive. No tests ran.
+Verify before running:
+```bash
+ls src/test/java/com/<pkg>/<module>/
+grep -c "@Test" src/test/java/com/<pkg>/<module>/<Module>ServiceTest.java
+grep -c "@Test" src/test/java/com/<pkg>/<module>/<Module>ControllerTest.java
+```
 
-Verify before running: `ls src/test/java/com/<pkg>/<module>/`
+If either count is 0 → write the test methods before running mvn.
 
 ---
 
@@ -57,15 +74,22 @@ Verify before running: `ls src/test/java/com/<pkg>/<module>/`
 5. Write <Module>ControllerTest.java     ← integration tests — DO THIS NOW
    src/test/java/com/<pkg>/<module>/
          ↓
-6. Verify test files exist and are not empty
+6. GATE 1 — Verify test files exist and have @Test methods
    ls src/test/java/com/<pkg>/<module>/
    → Must show: <Module>ServiceTest.java + <Module>ControllerTest.java
-   → If empty → write them now before continuing
+   grep -c "@Test" <Module>ServiceTest.java    → must be > 0
+   grep -c "@Test" <Module>ControllerTest.java → must be > 0
+   → If files missing or 0 methods → STOP → write them → re-verify
+   → Do NOT continue to step 7 until both files have @Test methods
          ↓
 7. Run All Tests
    mvn clean verify
          ↓
-8. Check Coverage
+8. GATE 2 — Check all tests pass (100% required)
+   mvn clean verify output must show: BUILD SUCCESS, 0 failures, 0 errors
+   If any test fails → STOP → fix the failure → re-run → only continue at 100%
+
+9. Check Coverage
    mvn jacoco:report → minimum 80%
          ↓
 9. Run curl Smoke Tests against live server

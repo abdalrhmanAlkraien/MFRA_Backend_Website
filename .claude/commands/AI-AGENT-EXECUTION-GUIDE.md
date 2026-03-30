@@ -482,108 +482,108 @@ const API_URL = 'http://localhost:8080/api';
 // ── TEST SUITE ────────────────────────────────────────────
 test.describe('[PageName] — [Module]', () => {
 
-  test.beforeEach(async ({ page }) => {
-    // Clear state before each test
-    await page.addInitScript(() => {
-      localStorage.clear();
-      sessionStorage.clear();
-    });
-  });
-
-  // ── TC-F-01: Page load (always required) ─────────────
-  test('TC-F-01: page loads and renders main content', async ({ page }) => {
-    await page.goto(`${BASE_URL}/[route]`);
-    await page.waitForLoadState('networkidle');
-    await expect(page.locator('[data-testid="..."]')).toBeVisible();
-    await page.screenshot({ path: 'screenshots/test-X.Y-F01-load.png' });
-  });
-
-  // ── TC-F-02: Auth guard (required for all admin pages) ─
-  test('TC-F-02: unauthenticated user redirected to login', async ({ page }) => {
-    await page.goto(`${BASE_URL}/admin/[route]`);
-    await page.waitForURL('**/admin/login');
-    await expect(page).toHaveURL(/admin\/login/);
-    await page.screenshot({ path: 'screenshots/test-X.Y-F02-auth.png' });
-  });
-
-  // ── TC-F-03: Form submission (required if page has form) ─
-  test('TC-F-03: valid form submission succeeds', async ({ page }) => {
-    // ... login first if admin page ...
-    await page.goto(`${BASE_URL}/[form-route]`);
-    await page.fill('[name="fieldName"]', 'valid value');
-    await page.click('[data-testid="submit-btn"]');
-    await expect(page.locator('[data-testid="success-message"]')).toBeVisible();
-    await page.screenshot({ path: 'screenshots/test-X.Y-F03-submit.png' });
-  });
-
-  // ── TC-F-04: Form validation (required if page has form) ─
-  test('TC-F-04: empty form shows inline validation errors', async ({ page }) => {
-    await page.goto(`${BASE_URL}/[form-route]`);
-    await page.click('[data-testid="submit-btn"]');
-    const errorCount = await page.locator('[role="alert"]').count();
-    expect(errorCount).toBeGreaterThan(0);
-    await page.screenshot({ path: 'screenshots/test-X.Y-F04-validation.png' });
-  });
-
-  // ── TC-F-05: Loading state (required for all data pages) ─
-  test('TC-F-05: loading skeleton shown during fetch', async ({ page }) => {
-    await page.route('**/api/**', async route => {
-      await new Promise(r => setTimeout(r, 800));
-      await route.continue();
-    });
-    await page.goto(`${BASE_URL}/[route]`);
-    const skeleton = page.locator('[data-testid="skeleton"], .animate-pulse');
-    await expect(skeleton.first()).toBeVisible();
-    await page.screenshot({ path: 'screenshots/test-X.Y-F05-loading.png' });
-  });
-
-  // ── TC-F-06: Empty state ─────────────────────────────
-  test('TC-F-06: empty state shown when no data returned', async ({ page }) => {
-    await page.route('**/api/[endpoint]**', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ success: true, data: [], totalElements: 0 }),
+   test.beforeEach(async ({ page }) => {
+      // Clear state before each test
+      await page.addInitScript(() => {
+         localStorage.clear();
+         sessionStorage.clear();
       });
-    });
-    await page.goto(`${BASE_URL}/[route]`);
-    await page.waitForLoadState('networkidle');
-    await expect(page.locator('[data-testid="empty-state"]')).toBeVisible();
-    await page.screenshot({ path: 'screenshots/test-X.Y-F06-empty.png' });
-  });
+   });
 
-  // ── TC-F-07: Error state ─────────────────────────────
-  test('TC-F-07: error state shown when API returns 500', async ({ page }) => {
-    await page.route('**/api/[endpoint]**', async route => {
-      await route.fulfill({ status: 500, body: '{"success":false}' });
-    });
-    await page.goto(`${BASE_URL}/[route]`);
-    await page.waitForLoadState('networkidle');
-    await expect(page.locator('[data-testid="error-state"]')).toBeVisible();
-    await page.screenshot({ path: 'screenshots/test-X.Y-F07-error.png' });
-  });
+   // ── TC-F-01: Page load (always required) ─────────────
+   test('TC-F-01: page loads and renders main content', async ({ page }) => {
+      await page.goto(`${BASE_URL}/[route]`);
+      await page.waitForLoadState('networkidle');
+      await expect(page.locator('[data-testid="..."]')).toBeVisible();
+      await page.screenshot({ path: 'screenshots/test-X.Y-F01-load.png' });
+   });
 
-  // ── TC-F-08: Responsive ──────────────────────────────
-  test('TC-F-08: layout correct on tablet and mobile', async ({ page }) => {
-    await page.goto(`${BASE_URL}/[route]`);
-    await page.waitForLoadState('networkidle');
+   // ── TC-F-02: Auth guard (required for all admin pages) ─
+   test('TC-F-02: unauthenticated user redirected to login', async ({ page }) => {
+      await page.goto(`${BASE_URL}/admin/[route]`);
+      await page.waitForURL('**/admin/login');
+      await expect(page).toHaveURL(/admin\/login/);
+      await page.screenshot({ path: 'screenshots/test-X.Y-F02-auth.png' });
+   });
 
-    await page.setViewportSize({ width: 768, height: 1024 });
-    await page.waitForTimeout(300);
-    const tabletScroll = await page.evaluate(() => document.body.scrollWidth > window.innerWidth);
-    expect(tabletScroll).toBe(false);
-    await page.screenshot({ path: 'screenshots/test-X.Y-F08-tablet.png' });
+   // ── TC-F-03: Form submission (required if page has form) ─
+   test('TC-F-03: valid form submission succeeds', async ({ page }) => {
+      // ... login first if admin page ...
+      await page.goto(`${BASE_URL}/[form-route]`);
+      await page.fill('[name="fieldName"]', 'valid value');
+      await page.click('[data-testid="submit-btn"]');
+      await expect(page.locator('[data-testid="success-message"]')).toBeVisible();
+      await page.screenshot({ path: 'screenshots/test-X.Y-F03-submit.png' });
+   });
 
-    await page.setViewportSize({ width: 375, height: 812 });
-    await page.waitForTimeout(300);
-    const mobileScroll = await page.evaluate(() => document.body.scrollWidth > window.innerWidth);
-    expect(mobileScroll).toBe(false);
-    await page.screenshot({ path: 'screenshots/test-X.Y-F08-mobile.png' });
-  });
+   // ── TC-F-04: Form validation (required if page has form) ─
+   test('TC-F-04: empty form shows inline validation errors', async ({ page }) => {
+      await page.goto(`${BASE_URL}/[form-route]`);
+      await page.click('[data-testid="submit-btn"]');
+      const errorCount = await page.locator('[role="alert"]').count();
+      expect(errorCount).toBeGreaterThan(0);
+      await page.screenshot({ path: 'screenshots/test-X.Y-F04-validation.png' });
+   });
 
-  // ── TC-F-NN: [Module-specific tests] ─────────────────
-  // Add one test per acceptance criterion from specs/<module>/spec.md
-  // that is not covered by TC-F-01 through TC-F-08
+   // ── TC-F-05: Loading state (required for all data pages) ─
+   test('TC-F-05: loading skeleton shown during fetch', async ({ page }) => {
+      await page.route('**/api/**', async route => {
+         await new Promise(r => setTimeout(r, 800));
+         await route.continue();
+      });
+      await page.goto(`${BASE_URL}/[route]`);
+      const skeleton = page.locator('[data-testid="skeleton"], .animate-pulse');
+      await expect(skeleton.first()).toBeVisible();
+      await page.screenshot({ path: 'screenshots/test-X.Y-F05-loading.png' });
+   });
+
+   // ── TC-F-06: Empty state ─────────────────────────────
+   test('TC-F-06: empty state shown when no data returned', async ({ page }) => {
+      await page.route('**/api/[endpoint]**', async route => {
+         await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({ success: true, data: [], totalElements: 0 }),
+         });
+      });
+      await page.goto(`${BASE_URL}/[route]`);
+      await page.waitForLoadState('networkidle');
+      await expect(page.locator('[data-testid="empty-state"]')).toBeVisible();
+      await page.screenshot({ path: 'screenshots/test-X.Y-F06-empty.png' });
+   });
+
+   // ── TC-F-07: Error state ─────────────────────────────
+   test('TC-F-07: error state shown when API returns 500', async ({ page }) => {
+      await page.route('**/api/[endpoint]**', async route => {
+         await route.fulfill({ status: 500, body: '{"success":false}' });
+      });
+      await page.goto(`${BASE_URL}/[route]`);
+      await page.waitForLoadState('networkidle');
+      await expect(page.locator('[data-testid="error-state"]')).toBeVisible();
+      await page.screenshot({ path: 'screenshots/test-X.Y-F07-error.png' });
+   });
+
+   // ── TC-F-08: Responsive ──────────────────────────────
+   test('TC-F-08: layout correct on tablet and mobile', async ({ page }) => {
+      await page.goto(`${BASE_URL}/[route]`);
+      await page.waitForLoadState('networkidle');
+
+      await page.setViewportSize({ width: 768, height: 1024 });
+      await page.waitForTimeout(300);
+      const tabletScroll = await page.evaluate(() => document.body.scrollWidth > window.innerWidth);
+      expect(tabletScroll).toBe(false);
+      await page.screenshot({ path: 'screenshots/test-X.Y-F08-tablet.png' });
+
+      await page.setViewportSize({ width: 375, height: 812 });
+      await page.waitForTimeout(300);
+      const mobileScroll = await page.evaluate(() => document.body.scrollWidth > window.innerWidth);
+      expect(mobileScroll).toBe(false);
+      await page.screenshot({ path: 'screenshots/test-X.Y-F08-mobile.png' });
+   });
+
+   // ── TC-F-NN: [Module-specific tests] ─────────────────
+   // Add one test per acceptance criterion from specs/<module>/spec.md
+   // that is not covered by TC-F-01 through TC-F-08
 
 });
 ```
@@ -720,6 +720,100 @@ Test source directories are NOT empty. Proceeding to Step 8.
 
 **If any test directory is still empty after this step — STOP. The test code
 was not written. Do not proceed to Step 8 until all test files exist.**
+
+### Step 7b — HARD STOP: Verify Test Files Exist
+
+**This gate cannot be skipped. It runs automatically after Step 7.**
+**If any check fails — the agent stops completely and reports to the user.**
+
+Run these checks now and report the result:
+
+#### Backend verification
+
+```bash
+# Count test methods in the service test file
+SERVICE_TEST="src/test/java/com/<pkg>/<module>/<Module>ServiceTest.java"
+CONTROLLER_TEST="src/test/java/com/<pkg>/<module>/<Module>ControllerTest.java"
+
+# Check files exist
+[ -f "$SERVICE_TEST" ]    && echo "✅ ServiceTest exists"    || echo "❌ ServiceTest MISSING"
+[ -f "$CONTROLLER_TEST" ] && echo "✅ ControllerTest exists" || echo "❌ ControllerTest MISSING"
+
+# Count @Test methods
+grep -c "@Test" "$SERVICE_TEST"    2>/dev/null && echo " test methods in ServiceTest"    || echo "0 test methods"
+grep -c "@Test" "$CONTROLLER_TEST" 2>/dev/null && echo " test methods in ControllerTest" || echo "0 test methods"
+```
+
+**Backend gate passes when:**
+- `<Module>ServiceTest.java` exists AND has ≥ 1 `@Test` method
+- `<Module>ControllerTest.java` exists AND has ≥ 1 `@Test` method
+
+**If backend gate FAILS:**
+```
+🚫 HARD STOP — BACKEND TESTS NOT WRITTEN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+❌ <Module>ServiceTest.java     → MISSING or has 0 @Test methods
+❌ <Module>ControllerTest.java  → MISSING or has 0 @Test methods
+
+The agent cannot proceed to Step 8 until test files exist.
+Returning to Step 7 to write the missing test files now.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+→ Go back to Step 7. Write the missing files. Re-run this gate.
+
+#### Frontend verification
+
+```bash
+SPEC_FILE="tests/e2e/<module>/<page>.spec.ts"
+[ -f "$SPEC_FILE" ] && echo "✅ Playwright spec exists" || echo "❌ Playwright spec MISSING"
+grep -c "test(" "$SPEC_FILE" 2>/dev/null && echo " test cases" || echo "0 test cases"
+```
+
+**Frontend gate passes when:**
+- `tests/e2e/<module>/<page>.spec.ts` exists AND has ≥ 1 `test(` block
+
+**If frontend gate FAILS:**
+```
+🚫 HARD STOP — FRONTEND TESTS NOT WRITTEN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+❌ tests/e2e/<module>/<page>.spec.ts → MISSING or has 0 test() blocks
+
+The agent cannot proceed to Step 8 until the Playwright spec exists.
+Returning to Step 7 to write the missing spec file now.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+→ Go back to Step 7. Write the missing file. Re-run this gate.
+
+#### Mobile verification (only if Flutter in stack.md)
+
+```bash
+DART_TEST="test/features/<module>/<page>_test.dart"
+[ -f "$DART_TEST" ] && echo "✅ Dart test exists" || echo "❌ Dart test MISSING"
+```
+
+#### Gate passes — show confirmation before continuing
+
+```
+✅ STEP 7b GATE PASSED — Test files verified
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Backend:
+  ✅ <Module>ServiceTest.java     ([N] @Test methods)
+  ✅ <Module>ControllerTest.java  ([N] @Test methods)
+
+Frontend:
+  ✅ tests/e2e/<module>/<page>.spec.ts  ([N] test() blocks)
+
+Mobile:
+  ✅ test/features/<module>/<page>_test.dart ([N] tests)
+  OR ⛔ Not in scope
+
+Proceeding to Step 8.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+**Only after all gates pass does execution continue to Step 8.**
+
+---
 
 ### Step 8 — Generate Test Plan Files
 
@@ -1275,6 +1369,42 @@ Write results into `.claude/tests/Task X.Y - Mobile Test Plan.md`.
 
 ---
 
+### Step 9b — HARD STOP: Verify Test Results Before Continuing
+
+**This gate runs automatically after Step 9.**
+**If any test failed — the agent cannot proceed to Step 10 or mark the task complete.**
+
+```
+Backend result:   [N] / [N] passed
+Frontend result:  [N] / [N] passed
+Mobile result:    [N] / [N] passed / ⛔ not in scope
+```
+
+If result is NOT 100%:
+
+```
+🚫 HARD STOP — TESTS ARE FAILING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+❌ Backend:  [X] tests failing
+   Failed:   [test method name] — [error message]
+
+❌ Frontend: [X] scenarios failing
+   Failed:   [scenario name] — [error]
+
+The task CANNOT be marked complete until all tests pass.
+Fixing failures now before proceeding.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+→ Fix the failing tests → re-run → only continue when 100% pass.
+
+If result IS 100%:
+```
+✅ STEP 9b GATE PASSED — All tests passing
+   Backend:  [N]/[N] ✅  Frontend: [N]/[N] ✅
+   Proceeding to Step 10.
+```
+
 ### Step 10 — Handle Test Failures
 
 **If ANY test fails on ANY platform:**
@@ -1470,11 +1600,11 @@ Options:
 ## ❌ Quality Gates — Cannot Mark COMPLETED Unless
 
 ### Backend Gates
-- [ ] `<Module>ServiceTest.java` EXISTS with minimum 8 test methods
-- [ ] `<Module>ControllerTest.java` EXISTS with minimum 15 test methods
-- [ ] `src/test/` is NOT empty — verified with `ls`
+- [ ] `<Module>ServiceTest.java` EXISTS — HARD STOP if missing (Step 7b)
+- [ ] `<Module>ControllerTest.java` EXISTS — HARD STOP if missing (Step 7b)
+- [ ] Both files have `@Test` methods — HARD STOP if 0 methods (Step 7b)
 - [ ] `mvn clean compile` → BUILD SUCCESS, 0 errors
-- [ ] `mvn clean verify` → BUILD SUCCESS, 0 failures
+- [ ] `mvn clean verify` → BUILD SUCCESS, 0 failures — HARD STOP if any fail (Step 9b)
 - [ ] Coverage ≥ 80% on changed classes
 - [ ] All admin endpoints have `@PreAuthorize`
 - [ ] All entities extend `BaseEntity`
@@ -1487,8 +1617,8 @@ Options:
 - [ ] `.claude/tests/Task X.Y - Backend Test Plan.md` filled with results
 
 ### Frontend Gates (only if Frontend in scope)
-- [ ] `tests/e2e/<module>/<page>.spec.ts` EXISTS with test cases
-- [ ] `tests/e2e/` is NOT empty — verified with `ls`
+- [ ] `tests/e2e/<module>/<page>.spec.ts` EXISTS — HARD STOP if missing (Step 7b)
+- [ ] File has `test(` blocks — HARD STOP if 0 tests (Step 7b)
 - [ ] `npm run build` → 0 TypeScript errors
 - [ ] All Playwright scenarios pass (100%)
 - [ ] All admin routes wrapped in `AuthGuard`
@@ -1543,6 +1673,9 @@ Options:
 | 20 | Test plan file before execution | Run tests without plan file | Generate .claude/tests/Task X.Y - [Platform] Test Plan.md first |
 | 21 | Write results back to plan file | Leave plan file as ⏳ NOT EXECUTED | Fill every scenario row with ✅ or ❌ after execution |
 | 22 | Document failure when page broken | Skip tests if build fails | Generate plan file, document failure reason, fix, re-run |
+| 23 | Step 7b gate blocks Step 8 | Skip test writing silently | If gate fails — return to Step 7 and write the files |
+| 24 | Step 9b gate blocks Step 10 | Mark complete with failing tests | Fix all failures before proceeding — 100% pass required |
+| 25 | Zero tolerance for empty test dirs | Proceed with 0 test methods | 0 @Test methods = gate fail = return to Step 7 |
 | 18 | Write results back to plan file | Leave plan file as ⏳ NOT EXECUTED | Fill every scenario row with ✅ or ❌ after execution |
 | 19 | Test even when page is broken | Skip tests if build fails | Generate plan file, document failure, fix, re-run |
 | 13 | tasks.md + systemTasks.md atomic | Update systemTasks only | Always update both in Step 12 |
@@ -1623,6 +1756,9 @@ Options:
 4. ✅ designs/[N]-requirements.md read — no conflict with spec.md
 5. ✅ Task summary presented and user confirmed
 6. ✅ All builds clean — backend + frontend + mobile
+   6a. ✅ Step 7b gate passed — test files exist with actual test methods
+   Backend:  ServiceTest.java ≥1 @Test | ControllerTest.java ≥1 @Test
+   Frontend: tests/e2e/<module>/<page>.spec.ts ≥1 test() block
 7. ✅ Test code files written BEFORE test runners executed:
    Backend:  ServiceTest.java + ControllerTest.java exist with methods
    Frontend: tests/e2e/<module>/<page>.spec.ts exists with test cases

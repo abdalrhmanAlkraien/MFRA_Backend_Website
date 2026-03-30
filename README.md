@@ -582,3 +582,120 @@ cannot be done safely.
 - Node 18+ (for React frontend)
 - Flutter 3.x (if mobile is in scope)
 - Docker + Docker Compose (local dev: PostgreSQL, Redis, Mailhog)
+
+
+```shell
+New project:
+  /check-ready
+  /analyze-designs          (or /analyze-page [N] one by one)
+  /generate-spec all
+  /continue-tasks
+  /review-page 1
+  /review-page 2
+  ...
+
+Adding a new page mid-project:
+  /analyze-page [N]
+  /generate-spec [module]
+  /execute-task
+
+Found problems during manual testing:
+  Write designs/[N]-notes.md
+  /implement-notes [N]
+  /review-page [N]
+
+Something broke:
+  /fix-task [id]
+
+Want to rebuild everything:
+  /reset-tasks
+  /continue-tasks
+```
+
+
+Before You Start
+/check-ready
+Validates the project is set up correctly before doing anything.
+Checks 9 layers: core files exist, stack.md is filled, users.md is filled, all images have matching .md files, analysis has been run, tasks exist, budget is healthy.
+Use when: Starting a new project. Starting a new day. Something feels wrong and you are not sure why.
+/check-ready
+
+Design Analysis
+/analyze-designs
+Analyzes ALL design images at once and generates the full project plan.
+Reads every [N].png + [N].md pair in designs/, extracts DB schema, API endpoints, business rules, generates [N]-requirements.md for each page, groups tasks into phases, writes everything to systemTasks.md and tasks.md.
+Use when: Starting a project for the first time after dropping all your design images.
+/analyze-designs
+
+/analyze-page [N]
+Analyzes a single design image and merges its tasks into the existing plan.
+Same BA workflow as /analyze-designs but targets one page only. Safe to run mid-project — only touches files for page N, never affects other pages.
+Use when: Adding a new page after development has already started. Re-analyzing a page after the design image was updated.
+/analyze-page 3
+/analyze-page 7
+
+Spec Generation
+/generate-spec [module]
+Converts extracted requirements into SpecKit spec files.
+Reads all [N]-requirements.md files for a module and produces specs/<module>/spec.md (acceptance criteria), plan.md (architecture decisions), and tasks.md (task breakdown).
+Use when: After /analyze-page or /analyze-designs — before running any tasks.
+/generate-spec blog
+/generate-spec case-studies
+/generate-spec all
+
+Development
+/execute-task
+Executes the next pending task — one task at a time.
+Asks: backend / frontend / mobile / all? Then builds entity + service + controller + migration, builds pages + components, runs tests (with hard stop gates), writes documentation, updates tracking files.
+Use when: You want control over each task — reviewing what the agent built before moving to the next one.
+/execute-task
+
+/continue-tasks
+Runs ALL pending tasks automatically without stopping.
+Asks platform once, then executes every pending task in dependency order. Auto-fixes failures (2 attempts per task), stops only when all tasks are done or budget runs low.
+Use when: You trust the setup and want to build the entire project while you do something else.
+/continue-tasks
+
+Fixing Problems
+/fix-task [id]
+Fixes a specific task that failed, is blocked, or needs review.
+Diagnoses whether the root cause is in the code or the requirements. Fixes the right layer, updates the requirements file if needed, re-runs tests, updates tracking files.
+Use when: A specific task shows ❌ FAILED or ⚠️ NEEDS REVIEW in systemTasks.md and you know which task ID it is.
+/fix-task 3.1
+/fix-task
+
+/implement-notes [N]
+Implements issues you found during manual testing of a page.
+Reads designs/[N]-notes.md that you filled after testing, implements every ⏳ Pending note (bug fixes, missing features, seed data, editor upgrades), skips ✅ Done notes, marks each done as it completes.
+Use when: You manually tested a page, found problems, wrote them in [N]-notes.md, and want the agent to fix them all.
+/implement-notes 3
+/implement-notes 5
+
+Review and Verification
+/review-page [N]
+Full 9-layer audit of one page — finds and fixes everything missing.
+Checks 9 layers in sequence: requirements → spec → backend implementation → backend tests → frontend implementation → frontend tests → mobile → DB audit → full cycle behavioral verification (UI + API + Database simultaneously). Fixes every gap it finds. The full cycle runs the real application and verifies every user action at UI, API, and database level.
+Use when: Development is done and you want to verify a page is truly complete — not just that it compiled, but that it actually works end to end.
+/review-page 1
+/review-page 2
+
+/review-progress
+Read-only snapshot of the entire project status.
+Shows: tasks done vs pending vs failed, progress per phase, test results, budget used, configs ready vs missing, what to do next. Never modifies any file.
+Use when: You want to see where the project stands without triggering any work.
+/review-progress
+
+Maintenance
+/add-feature "..."
+Adds a new feature or page mid-project.
+Analyzes impact across all existing files, shows what will change, waits for confirmation, generates requirements and tasks for the new feature.
+Use when: After launch you want to add something that was not in the original designs.
+/add-feature "Add a partners logo grid to the home page"
+/add-feature "Add export to CSV button on the users table"
+
+/reset-tasks
+Resets task statuses back to ⏳ Pending without deleting any code.
+Resets tasks.md and systemTasks.md status fields only. Never touches source code, test files, requirements, or specs.
+Use when: You want to re-run all tasks from scratch (after a big refactor, or when the agent did something wrong across multiple tasks).
+/reset-tasks
+/reset-tasks 3 4 5
