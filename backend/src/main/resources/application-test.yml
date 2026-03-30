@@ -1,0 +1,19 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+
+  flyway:
+    enabled: true
+
+app:
+  jwt:
+    secret: test-secret-key-for-testing-only-must-be-at-least-256-bits-long
+    expiration-ms: 3600000
+    refresh-expiration-ms: 604800000
+    remember-expiration-ms: 2592000000
+  admin:
+    default-email: admin@mfra.com
+    default-password: admin123
+    default-name: Test Admin
